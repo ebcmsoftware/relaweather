@@ -17,17 +17,21 @@ a:visited {
 	color: white;
 }
 
-
 #app_title {
 	padding-top: 40px;
+}
+
+#location_form {
+	padding-top: 60px;
 }
 
 #zip_submit {
     border-radius: 0px;
     border: 0;
     font-family: 'Montserrat';
-    font-size: 1em;
-    background: #f4f4f4;
+    font-size: 1.2em;
+    background: white;
+    padding: 5px 20px;
 }	
 
 #zip_box {
