@@ -2,4 +2,46 @@ body{
 	background-color: #34495e;
 	color: white;
 	font-family: 'Montserrat';
+	text-align: center;
+}
+
+h1 {
+	font-size: 2.5em;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:visited {
+	color: white;
+}
+
+
+#app_title {
+	padding-top: 40px;
+}
+
+#zip_submit {
+    border-radius: 0px;
+    border: 0;
+    font-family: 'Montserrat';
+    font-size: 1em;
+    background: #f4f4f4;
+}	
+
+#zip_box {
+	font-family: 'Montserrat';
+    font-size: 1.3em;
+}
+
+#footer{
+	text-align: center;
+	width: 100%;
+	font-size : 1em;
+  	padding-top: 5px;
+	padding-bottom: 5px;
+  	position:fixed;
+  	bottom:0px;
+  	border-top: 2px solid #EEF2F3;
 }
