@@ -1,4 +1,5 @@
 import webapp2
+import datetime
 import os
 import jinja2
 import json
@@ -56,6 +57,16 @@ class API(webapp2.RequestHandler):
         if lat and lng:
             url = 'http://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lng
             today = json.loads(urllib2.urlopen(url).read())
+
+            #YESTERDAY
+            url = 'http://api.openweathermap.org/data/2.5/find?lat='+lat+'&lon='+lng+'&cnt=1'
+            yesterday_id = json.loads(urllib2.urlopen(url).read())['list'][0]['id']
+            yesterdays_date = datetime.datetime.utcnow() - datetime.timedelta(days=2)
+            yesterday_unix = int((yesterdays_date - datetime.datetime(1970,1,1)).total_seconds())
+            url = 'http://api.openweathermap.org/data/2.5/history/city?id='+str(yesterday_id)+'&type=daily&start='+str(yesterday_unix)+'&cnt=1'
+            yesterday = json.loads(urllib2.urlopen(url).read())
+
+            #TOMORROW
             url = 'http://api.openweathermap.org/data/2.5/forecast/daily?lat='+lat+'&lon='+lng+'&cnt=1&mode=json'
             tomorrow = json.loads(urllib2.urlopen(url).read())
             logging.warn(today)
@@ -66,6 +77,8 @@ class API(webapp2.RequestHandler):
         d8a = '' + \
         ('TODAYS DATA:<br>') + \
         (json.dumps(today, separators=(',',':'), sort_keys=True)) + \
+        ('<br><br>YESTERDAYS DATA:<br>') + \
+        (json.dumps(yesterday, separators=(',',':'), sort_keys=True)) + \
         ('<br><br>TOMORROWS DATA:<br>') + \
         (json.dumps(tomorrow, separators=(',',':'), sort_keys=True))
         self.response.write(d8a)
