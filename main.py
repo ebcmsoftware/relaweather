@@ -27,20 +27,15 @@ class API(webapp2.RequestHandler):
             if not (lat and lng) and not zipcode:
                 raise TypeError
             if zipcode:
-                zipcode = int(zipcode)
-
-                #if they give like "2155" rather than "02155"
-                if zipcode < 10000 and self.request.get('zip', None)[0] != '0':
-                    raise TypeError
-                if zipcode > 99999 or zipcode < 1000:
+                if len(zipcode) != 5:
                     raise TypeError
             if lat:
-                lat = float(lat)
-                if lat < -90 or lat > 90:
+                latf = float(lat)
+                if latf < -90 or latf > 90:
                     raise TypeError
             if lng:
-                lng = float(lng)
-                if lng < -180 or lng > 180:
+                lngf = float(lng)
+                if lngf < -180 or lngf > 180:
                     raise TypeError
         except TypeError:
             logging.warn('Invalid API request - given zip: %s, lat: %s, lng: %s' %(zipcode,lat,lng))
