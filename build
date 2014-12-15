@@ -1,0 +1,5 @@
+git add -A
+echo -n "enter commit message here:"
+read message
+git commit -m "$message"
+git push origin master
