@@ -1,7 +1,14 @@
 import webapp2
+import os
+import jinja2
 import json
 import logging
 import urllib2
+
+JINJA_ENVIRONMENT = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
+    extensions=['jinja2.ext.autoescape'],
+    autoescape=True)
 
 class API(webapp2.RequestHandler):
     def options(self):      
@@ -64,7 +71,9 @@ class API(webapp2.RequestHandler):
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
-        self.response.write('404 lol')
+        template = JINJA_ENVIRONMENT.get_template('index.html')
+        template_values = {}
+        self.response.write(template.render(template_values))
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
