@@ -1,6 +1,7 @@
 import webapp2
 import json
 import logging
+import urllib2
 
 class API(webapp2.RequestHandler):
     def options(self):      
@@ -18,15 +19,15 @@ class API(webapp2.RequestHandler):
 
         ####Error checking and input validation####
         zipcode = self.request.get('zip', None)
-        
         lat = self.request.get('lat', None)
         lng = self.request.get('lng', None)
 
         response = {}
-        try: #what gorgeous error checking (not)
+        try: # what gorgeous error checking (not)
             if not (lat and lng) and not zipcode:
                 raise TypeError
             if zipcode:
+                zi = int(zipcode)
                 if len(zipcode) != 5:
                     raise TypeError
             if lat:
@@ -45,10 +46,21 @@ class API(webapp2.RequestHandler):
             return
         ####/Error checking####
 
-        response['zip'] = zipcode
-        response['lat'] = lat
-        response['lng'] = lng
-        write(response)
+        response['tomorrow'] = 'a bit cooler - rainy'
+        url = 'http://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lng
+        today = json.loads(urllib2.urlopen(url).read())
+        url = 'http://api.openweathermap.org/data/2.5/forecast/daily?lat='+lat+'&lon='+lng+'&cnt=1&mode=json'
+        tomorrow = json.loads(urllib2.urlopen(url).read())
+        logging.warn(today)
+        logging.warn(tomorrow)
+
+        d8a = '' + \
+        ('TODAYS DATA:<br>') + \
+        (json.dumps(today, separators=(',',':'))) + \
+        ('<br><br>TOMORROWS DATA:<br>') + \
+        (json.dumps(tomorrow, separators=(',',':')))
+        self.response.write(d8a)
+        #write(response)
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
