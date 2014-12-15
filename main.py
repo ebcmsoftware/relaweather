@@ -22,7 +22,7 @@ class API(webapp2.RequestHandler):
         self.response.headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT'
 
         def write(response):
-            self.response.write(json.dumps(response, separators=(',',':')))
+            self.response.write(json.dumps(response, separators=(',',':'), sort_keys=True))
 
         ####Error checking and input validation####
         zipcode = self.request.get('zip', None)
@@ -53,19 +53,21 @@ class API(webapp2.RequestHandler):
             return
         ####/Error checking####
 
-        response['tomorrow'] = 'a bit cooler - rainy'
-        url = 'http://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lng
-        today = json.loads(urllib2.urlopen(url).read())
-        url = 'http://api.openweathermap.org/data/2.5/forecast/daily?lat='+lat+'&lon='+lng+'&cnt=1&mode=json'
-        tomorrow = json.loads(urllib2.urlopen(url).read())
-        logging.warn(today)
-        logging.warn(tomorrow)
+        if lat and lng:
+            url = 'http://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lng
+            today = json.loads(urllib2.urlopen(url).read())
+            url = 'http://api.openweathermap.org/data/2.5/forecast/daily?lat='+lat+'&lon='+lng+'&cnt=1&mode=json'
+            tomorrow = json.loads(urllib2.urlopen(url).read())
+            logging.warn(today)
+            logging.warn(tomorrow)
+        elif zipcode:
+            pass
 
         d8a = '' + \
         ('TODAYS DATA:<br>') + \
-        (json.dumps(today, separators=(',',':'))) + \
+        (json.dumps(today, separators=(',',':'), sort_keys=True)) + \
         ('<br><br>TOMORROWS DATA:<br>') + \
-        (json.dumps(tomorrow, separators=(',',':')))
+        (json.dumps(tomorrow, separators=(',',':'), sort_keys=True))
         self.response.write(d8a)
         #write(response)
 
@@ -76,6 +78,6 @@ class MainHandler(webapp2.RequestHandler):
         self.response.write(template.render(template_values))
 
 app = webapp2.WSGIApplication([
-    ('/', MainHandler),
-    ('/api', API)
+    ('/api', API),
+    ('/', MainHandler)
 ], debug=True)
