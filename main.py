@@ -75,8 +75,9 @@ class API(webapp2.RequestHandler):
 
         #YESTERDAY
         url = 'http://api.openweathermap.org/data/2.5/station/find?lat='+lat+'&lon='+lng+'&cnt=1' #get a lot of nearby stations? idk
-        yesterday_id = json.loads(urllib2.urlopen(url).read())[0]['station']['id'] # station ID of the closest station to that user
+        yesterday_id = today['sys']['id'] # weather station ID of the data gotten from 'todays data'
         url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=hour&cnt=30'
+        url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=day&type=tick&cnt=1'
         yesterday = json.loads(urllib2.urlopen(url).read())
 
         #TOMORROW
@@ -96,17 +97,10 @@ class API(webapp2.RequestHandler):
         else:
             response['state'] = location['results'][0]['address_components'][4]['short_name']
             response['zip'] = location['results'][0]['address_components'][6]['short_name']
-        write(response)
-        return # send the data
-
-        ######################### TESTING #######################
-        self.response.write('TODAYS DATA:<br>') 
-        write(today)
-        self.response.write('<br><br>YESTERDAYS DATA:<br>')
+        #write(response)
+        #return # send the data
         write(yesterday)
-        self.response.write('<br><br>TOMORROWS DATA:<br>')
-        write(tomorrow)
-        ######################### /TESTING ######################
+
 
 
 class MainHandler(webapp2.RequestHandler):
