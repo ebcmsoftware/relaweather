@@ -33,18 +33,17 @@ class API(webapp2.RequestHandler):
         #TODO: LOGIC
         def get_tomorrow(today, tomorrow):
             today_temp = today['main']['temp']
-            today_pressure = today['main']['pressure'] / 10.0
+            today_pressure = today['main']['pressure'] / 1000.0
             today_speed = today['wind']['speed']
 
             tomorrow_temp = tomorrow['list'][0]['temp']['day']
-            tomorrow_pressure = tomorrow['list'][0]['pressure'] / 10.0
+            tomorrow_pressure = tomorrow['list'][0]['pressure'] / 1000.0
             tomorrow_speed = tomorrow['list'][0]['speed']
 
             today_feelslike = feelslike(today_temp, today_pressure, today_speed)
             tomorrow_feelslike = feelslike(tomorrow_temp, tomorrow_pressure, tomorrow_speed)
 
-            return [today_pressure, tomorrow_pressure]
-            return [today_feelslike, tomorrow_feelslike]
+            return '(today_temp - tomorrow_temp): %f' %(today_feelslike - tomorrow_feelslike)
 
         #TODO: LOGIC
         def get_today(yesterday, today):
