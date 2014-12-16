@@ -25,6 +25,14 @@ class API(webapp2.RequestHandler):
         def write(response):
             self.response.write(json.dumps(response, separators=(',',':'), sort_keys=True))
 
+        #TODO: LOGIC
+        def get_tomorrow(today, tomorrow):
+            return 'hotter'
+
+        #TODO: LOGIC
+        def get_today(yesterday, today):
+            return 'colder'
+
         ####Error checking and input validation####
         zipcode = self.request.get('zip', None)
         lat = self.request.get('lat', None)
@@ -55,25 +63,28 @@ class API(webapp2.RequestHandler):
         ####/Error checking####
 
         if lat and lng:
+            #TODAY
             url = 'http://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lng
             today = json.loads(urllib2.urlopen(url).read())
 
             #YESTERDAY
-            url = 'http://api.openweathermap.org/data/2.5/find?lat='+lat+'&lon='+lng+'&cnt=1'
-            yesterday_id = json.loads(urllib2.urlopen(url).read())['list'][0]['id']
-            yesterdays_date = datetime.datetime.utcnow() - datetime.timedelta(days=2)
-            yesterday_unix = int((yesterdays_date - datetime.datetime(1970,1,1)).total_seconds())
-            url = 'http://api.openweathermap.org/data/2.5/history/city?id='+str(yesterday_id)+'&type=daily&start='+str(yesterday_unix)+'&cnt=1'
+            url = 'http://api.openweathermap.org/data/2.5/station/find?lat='+lat+'&lon='+lng+'&cnt=1' #get a lot of nearby stations? idk
+            yesterday_id = json.loads(urllib2.urlopen(url).read())[0]['station']['id'] # station ID of the closest station to that user
+            url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=hour&cnt=30'
             yesterday = json.loads(urllib2.urlopen(url).read())
 
             #TOMORROW
             url = 'http://api.openweathermap.org/data/2.5/forecast/daily?lat='+lat+'&lon='+lng+'&cnt=1&mode=json'
             tomorrow = json.loads(urllib2.urlopen(url).read())
-            logging.warn(today)
-            logging.warn(tomorrow)
         elif zipcode:
             pass
 
+        response['tomorrow'] = get_tomorrow(today, tomorrow)
+        response['today'] = get_today(yesterday, today)
+        write(response)
+        return
+
+        ######################### TESTING #######################
         d8a = '' + \
         ('TODAYS DATA:<br>') + \
         (json.dumps(today, separators=(',',':'), sort_keys=True)) + \
@@ -82,7 +93,8 @@ class API(webapp2.RequestHandler):
         ('<br><br>TOMORROWS DATA:<br>') + \
         (json.dumps(tomorrow, separators=(',',':'), sort_keys=True))
         self.response.write(d8a)
-        #write(response)
+        ######################### /TESTING ######################
+
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
