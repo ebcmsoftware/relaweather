@@ -89,7 +89,12 @@ class API(webapp2.RequestHandler):
         response['tomorrow'] = get_tomorrow(today, tomorrow)
         response['today'] = get_today(yesterday, today)
         response['city'] = location['results'][0]['address_components'][2]['long_name']
-        response['zip'] = location['results'][0]['address_components'][6]['short_name']
+        if location['results'][0]['address_components'][5]['short_name'] != 'US' #THEN THEY ARE A COMMUNIST
+            response['state'] = location['results'][0]['address_components'][5]['short_name']
+            response['zip'] = '666'
+        else:
+            response['state'] = location['results'][0]['address_components'][4]['short_name']
+            response['zip'] = location['results'][0]['address_components'][6]['short_name']
         write(response)
         return # send the data
 
