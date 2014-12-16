@@ -63,28 +63,29 @@ class API(webapp2.RequestHandler):
             return
         ####/Error checking####
 
-        if lat and lng:
-            #TODAY
-            url = 'http://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lng
-            today = json.loads(urllib2.urlopen(url).read())
-
-            #YESTERDAY
-            url = 'http://api.openweathermap.org/data/2.5/station/find?lat='+lat+'&lon='+lng+'&cnt=1' #get a lot of nearby stations? idk
-            yesterday_id = json.loads(urllib2.urlopen(url).read())[0]['station']['id'] # station ID of the closest station to that user
-            url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=hour&cnt=30'
-            yesterday = json.loads(urllib2.urlopen(url).read())
-
-            #TOMORROW
-            url = 'http://api.openweathermap.org/data/2.5/forecast/daily?lat='+lat+'&lon='+lng+'&cnt=1&mode=json'
-            tomorrow = json.loads(urllib2.urlopen(url).read())
-
-            #LOCATION
-            url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng='+lat+','+lng+'&key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'
+        if not lat or not lng:
+            url = 'https://maps.googleapis.com/maps/api/geocode/json?address='+zipcode+'&key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'
             location = json.loads(urllib2.urlopen(url).read())
-        elif zipcode:
-            #option 1: reverse lookup lat and lng
-            #option 2: does openweathermap have zip support for all of these endpoints? if so just use the zip lol
-            pass
+            lat = str(location['results'][0]['geometry']['location']['lat'])
+            lng = str(location['results'][0]['geometry']['location']['lng'])
+        #use lat+lng to get data
+        #TODAY
+        url = 'http://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lng
+        today = json.loads(urllib2.urlopen(url).read())
+
+        #YESTERDAY
+        url = 'http://api.openweathermap.org/data/2.5/station/find?lat='+lat+'&lon='+lng+'&cnt=1' #get a lot of nearby stations? idk
+        yesterday_id = json.loads(urllib2.urlopen(url).read())[0]['station']['id'] # station ID of the closest station to that user
+        url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=hour&cnt=30'
+        yesterday = json.loads(urllib2.urlopen(url).read())
+
+        #TOMORROW
+        url = 'http://api.openweathermap.org/data/2.5/forecast/daily?lat='+lat+'&lon='+lng+'&cnt=1&mode=json'
+        tomorrow = json.loads(urllib2.urlopen(url).read())
+
+        #LOCATION
+        url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng='+lat+','+lng+'&key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'
+        location = json.loads(urllib2.urlopen(url).read())
 
         response['tomorrow'] = get_tomorrow(today, tomorrow)
         response['today'] = get_today(yesterday, today)
