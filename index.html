@@ -11,14 +11,17 @@
 <body>
 	<h1 id = "app_title">RelaWeather</h1>
 	<h3>What's the weather?</h3>
-	<div id = "location_form">
+	<h2 id = "location_name">City Name</h2>
+	<h3 id = "weather_desc">loading...</h3>
+	<div id = "location_form" action="action_page.php">
 		<form id = "zip_form">
-			<input id = "zip_box" type = "tel" name = "zip" placeholder = "zip code" size = 10 autofocus><br><br>
-			<input id = "zip_submit" type = "submit" min = "0" max = "99999" value = "Go">
+			<input id = "zip_box" type = "tel" name = "zip" placeholder = "zip code" size = 10 min = "0" max = "99999" autofocus><br><br>
+			<input class = "submit_button" id = "zip_submit" type = "submit" value = "Go">
 		</form>
 	</div>
 	<footer id = "footer"><a  href = "http://ebcmsoftware.com" target="_blank">&copy; EBCM Software 2014</a> &nbsp;|&nbsp; <a href = "http://ebcmsoftware.com/donate/" target = "_blank"> Donate</a>
   </footer>
 </body>
+<script src="http://code.jquery.com/jquery-latest.min.js"></script>
 <script type="text/javascript" src ="scripts/script.js"></script>
 </html>

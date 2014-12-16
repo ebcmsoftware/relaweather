@@ -6,6 +6,7 @@ body{
 	-webkit-user-select: none; /* Chrome/Safari */        
 	-moz-user-select: none; /* Firefox */
 	-ms-user-select: none; /* IE10+ */
+	font-size: 87.5%;
 }
 
 h1 {
@@ -29,21 +30,20 @@ a:visited {
 }
 
 #location_form {
-	padding-top: 40px;
+	padding-top: 60px;
 }
 
-#zip_submit {
+.submit_button {
     border-radius: 0px;
     border: 0;
     font-family: 'Montserrat';
-    font-size: 1.2em;
     background: white;
     padding: 5px 20px;
 }	
 
 #zip_box {
 	font-family: 'Montserrat';
-    font-size: 1.3em;
+    font-size: 1em;
 }
 
 #footer{
