@@ -77,6 +77,10 @@ class API(webapp2.RequestHandler):
             #TOMORROW
             url = 'http://api.openweathermap.org/data/2.5/forecast/daily?lat='+lat+'&lon='+lng+'&cnt=1&mode=json'
             tomorrow = json.loads(urllib2.urlopen(url).read())
+
+            #LOCATION
+            url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng='+lat+','+lng+'&key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'
+            location = json.loads(urllib2.urlopen(url).read())
         elif zipcode:
             #option 1: reverse lookup lat and lng
             #option 2: does openweathermap have zip support for all of these endpoints? if so just use the zip lol
@@ -84,6 +88,8 @@ class API(webapp2.RequestHandler):
 
         response['tomorrow'] = get_tomorrow(today, tomorrow)
         response['today'] = get_today(yesterday, today)
+        response['city'] = location['results'][0]['address_components'][2]['long_name']
+        response['zip'] = location['results'][0]['address_components'][6]['short_name']
         write(response)
         return # send the data
 
