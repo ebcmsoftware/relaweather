@@ -17,7 +17,9 @@ if (navigator.geolocation) {
         function post_success(data) {
             console.log("hey I got data");
             var weather_dat = JSON.parse(data);
-            show_weather("today it is " + weather_dat.today);
+            weather = "today it is " + weather_dat.today + " than yesterday";
+            place = weather_dat.city + ", " + weather_dat.state
+            show_weather(weather, place);
         }
         $.get('/api?lat='+myLat+'&lng='+myLng, post_success)
     }
@@ -34,10 +36,11 @@ $('#zip_submit').click(function() {
 
 });
 
-function show_weather(weather_string){
+function show_weather(weather_string, place_string){
     $('#app_title').css('padding-top', '10px');
     $('#app_title').css('font_size', '2em');
     $('#location_name').show();
+    $('#location_name').html(place_string);
     $('#weather_desc').html(weather_string);
     $('#weather_desc').show();
 }
