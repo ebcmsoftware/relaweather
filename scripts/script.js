@@ -45,4 +45,5 @@ function show_weather(weather_string, place_string){
     $('#location_name').show();
     $('#weather_desc').html(weather_string);
     $('#weather_desc').show();
+    $('#location_form').hide();
 }
