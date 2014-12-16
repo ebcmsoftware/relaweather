@@ -26,9 +26,25 @@ class API(webapp2.RequestHandler):
         def write(response):
             self.response.write(json.dumps(response, separators=(',',':'), sort_keys=True))
 
+        # temp in Celsius, vapor_pressure in kPa, wind_speed in m/sec
+        def feelslike(temp, vapor_pressure, wind_speed):
+            return -2.7 + 1.04*(temp-273.15) + 2.0*vapor_pressure - 0.65*wind_speed
+
         #TODO: LOGIC
         def get_tomorrow(today, tomorrow):
-            return 'hotter'
+            today_temp = today['main']['temp']
+            today_pressure = today['main']['pressure'] / 10.0
+            today_speed = today['wind']['speed']
+
+            tomorrow_temp = tomorrow['list'][0]['temp']['day']
+            tomorrow_pressure = tomorrow['list'][0]['pressure'] / 10.0
+            tomorrow_speed = tomorrow['list'][0]['speed']
+
+            today_feelslike = feelslike(today_temp, today_pressure, today_speed)
+            tomorrow_feelslike = feelslike(tomorrow_temp, tomorrow_pressure, tomorrow_speed)
+
+            return [today_pressure, tomorrow_pressure]
+            return [today_feelslike, tomorrow_feelslike]
 
         #TODO: LOGIC
         def get_today(yesterday, today):
@@ -77,7 +93,7 @@ class API(webapp2.RequestHandler):
         url = 'http://api.openweathermap.org/data/2.5/station/find?lat='+lat+'&lon='+lng+'&cnt=1' #get a lot of nearby stations? idk
         yesterday_id = today['sys']['id'] # weather station ID of the data gotten from 'todays data'
         url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=hour&cnt=30'
-        url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=day&type=tick&cnt=1'
+        url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=day&type=tick&cnt=20'
         yesterday = json.loads(urllib2.urlopen(url).read())
 
         #TOMORROW
@@ -97,8 +113,8 @@ class API(webapp2.RequestHandler):
         else:
             response['state'] = location['results'][0]['address_components'][4]['short_name']
             response['zip'] = location['results'][0]['address_components'][6]['short_name']
-        #write(response)
-        #return # send the data
+        write(response)
+        return # send the data
         write(yesterday)
 
 
