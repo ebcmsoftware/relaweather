@@ -1,4 +1,5 @@
 import webapp2
+import datetime
 import os
 import jinja2
 import json
@@ -21,10 +22,19 @@ class API(webapp2.RequestHandler):
         self.response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
         self.response.headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT'
 
+        # Writes a dict to the response
         def write(response):
             self.response.write(json.dumps(response, separators=(',',':'), sort_keys=True))
 
-        ####Error checking and input validation####
+        #TODO: LOGIC
+        def get_tomorrow(today, tomorrow):
+            return 'hotter'
+
+        #TODO: LOGIC
+        def get_today(yesterday, today):
+            return 'colder'
+
+        # Error checking and input validation
         zipcode = self.request.get('zip', None)
         lat = self.request.get('lat', None)
         lng = self.request.get('lng', None)
@@ -54,22 +64,38 @@ class API(webapp2.RequestHandler):
         ####/Error checking####
 
         if lat and lng:
+            #TODAY
             url = 'http://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lng
             today = json.loads(urllib2.urlopen(url).read())
+
+            #YESTERDAY
+            url = 'http://api.openweathermap.org/data/2.5/station/find?lat='+lat+'&lon='+lng+'&cnt=1' #get a lot of nearby stations? idk
+            yesterday_id = json.loads(urllib2.urlopen(url).read())[0]['station']['id'] # station ID of the closest station to that user
+            url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=hour&cnt=30'
+            yesterday = json.loads(urllib2.urlopen(url).read())
+
+            #TOMORROW
             url = 'http://api.openweathermap.org/data/2.5/forecast/daily?lat='+lat+'&lon='+lng+'&cnt=1&mode=json'
             tomorrow = json.loads(urllib2.urlopen(url).read())
-            logging.warn(today)
-            logging.warn(tomorrow)
         elif zipcode:
+            #option 1: reverse lookup lat and lng
+            #option 2: does openweathermap have zip support for all of these endpoints? if so just use the zip lol
             pass
 
-        d8a = '' + \
-        ('TODAYS DATA:<br>') + \
-        (json.dumps(today, separators=(',',':'), sort_keys=True)) + \
-        ('<br><br>TOMORROWS DATA:<br>') + \
-        (json.dumps(tomorrow, separators=(',',':'), sort_keys=True))
-        self.response.write(d8a)
-        #write(response)
+        response['tomorrow'] = get_tomorrow(today, tomorrow)
+        response['today'] = get_today(yesterday, today)
+        write(response)
+        return # send the data
+
+        ######################### TESTING #######################
+        self.response.write('TODAYS DATA:<br>') 
+        write(today)
+        self.response.write('<br><br>YESTERDAYS DATA:<br>')
+        write(yesterday)
+        self.response.write('<br><br>TOMORROWS DATA:<br>')
+        write(tomorrow)
+        ######################### /TESTING ######################
+
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
@@ -77,7 +103,9 @@ class MainHandler(webapp2.RequestHandler):
         template_values = {}
         self.response.write(template.render(template_values))
 
+
 app = webapp2.WSGIApplication([
     ('/api', API),
     ('/', MainHandler)
 ], debug=True)
+
