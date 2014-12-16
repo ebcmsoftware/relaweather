@@ -1,6 +1,8 @@
 //:^)
 $( document ).ready(function() {
     $('#location_name').hide();
+    $('#location_form').hide();
+    $('#weather_desc').hide();
 });
 
 function get_success(data) {
@@ -24,7 +26,8 @@ if (navigator.geolocation) {
         $.get('/api?lat='+myLat+'&lng='+myLng, get_success);
     }
     function error(err) {
-        console.log('ERROR(' + err.code + '): ' + err.message);
+        console.log("you didn't want to give us your location");
+        $('#location_form').show();
     }
     navigator.geolocation.getCurrentPosition(success, error, options);
 }
@@ -39,8 +42,6 @@ $('#zip_submit').click(function() {
 });
 
 function show_weather(weather_string, place_string){
-    $('#app_title').css('padding-top', '10px');
-    $('#app_title').css('font_size', '2em');
     $('#location_name').html(place_string);
     $('#location_name').show();
     $('#weather_desc').html(weather_string);
