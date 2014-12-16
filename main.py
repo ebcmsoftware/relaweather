@@ -22,6 +22,7 @@ class API(webapp2.RequestHandler):
         self.response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
         self.response.headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT'
 
+        # Writes a dict to the response
         def write(response):
             self.response.write(json.dumps(response, separators=(',',':'), sort_keys=True))
 
@@ -33,7 +34,7 @@ class API(webapp2.RequestHandler):
         def get_today(yesterday, today):
             return 'colder'
 
-        ####Error checking and input validation####
+        # Error checking and input validation
         zipcode = self.request.get('zip', None)
         lat = self.request.get('lat', None)
         lng = self.request.get('lng', None)
@@ -77,22 +78,22 @@ class API(webapp2.RequestHandler):
             url = 'http://api.openweathermap.org/data/2.5/forecast/daily?lat='+lat+'&lon='+lng+'&cnt=1&mode=json'
             tomorrow = json.loads(urllib2.urlopen(url).read())
         elif zipcode:
+            #option 1: reverse lookup lat and lng
+            #option 2: does openweathermap have zip support for all of these endpoints? if so just use the zip lol
             pass
 
         response['tomorrow'] = get_tomorrow(today, tomorrow)
         response['today'] = get_today(yesterday, today)
         write(response)
-        return
+        return # send the data
 
         ######################### TESTING #######################
-        d8a = '' + \
-        ('TODAYS DATA:<br>') + \
-        (json.dumps(today, separators=(',',':'), sort_keys=True)) + \
-        ('<br><br>YESTERDAYS DATA:<br>') + \
-        (json.dumps(yesterday, separators=(',',':'), sort_keys=True)) + \
-        ('<br><br>TOMORROWS DATA:<br>') + \
-        (json.dumps(tomorrow, separators=(',',':'), sort_keys=True))
-        self.response.write(d8a)
+        self.response.write('TODAYS DATA:<br>') 
+        write(today)
+        self.response.write('<br><br>YESTERDAYS DATA:<br>')
+        write(yesterday)
+        self.response.write('<br><br>TOMORROWS DATA:<br>')
+        write(tomorrow)
         ######################### /TESTING ######################
 
 
@@ -102,7 +103,9 @@ class MainHandler(webapp2.RequestHandler):
         template_values = {}
         self.response.write(template.render(template_values))
 
+
 app = webapp2.WSGIApplication([
     ('/api', API),
     ('/', MainHandler)
 ], debug=True)
+
