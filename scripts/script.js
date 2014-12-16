@@ -31,7 +31,7 @@ if (navigator.geolocation) {
 
 $('#zip_submit').click(function() {
         var zip_code = $('#zip_box').val(); 
-        if (zip_code.match(^[0-9]{5}) != null) {
+        if (zip_code.match(/^[0-9]{5}/) != null) {
             $.get('/api?zip='+zip_code, get_success);
         } else {
                 alert("That's not a valid location.");
@@ -45,4 +45,5 @@ function show_weather(weather_string, place_string){
     $('#location_name').show();
     $('#weather_desc').html(weather_string);
     $('#weather_desc').show();
+    $('#location_form').hide();
 }
