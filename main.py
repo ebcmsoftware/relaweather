@@ -45,9 +45,22 @@ class API(webapp2.RequestHandler):
 
             return '(today_temp - tomorrow_temp): %f' %(today_feelslike - tomorrow_feelslike)
 
-        #TODO: LOGIC
+        #technically the 'yesterday' data is from midnight so mayb we should fix that
         def get_today(yesterday, today):
-            return 'colder'
+            write(yesterday) 
+            return
+            today_temp = today['main']['temp']
+            today_pressure = today['main']['pressure'] / 1000.0
+            today_speed = today['wind']['speed']
+
+            yesterday_temp = yesterday['list'][0]['temp']['v']
+            yesterday_pressure = yesterday['list'][0]['pressure']['v'] / 1000.0
+            yesterday_speed = yesterday['list'][0]['wind']['speed']['v']
+
+            today_feelslike = feelslike(today_temp, today_pressure, today_speed)
+            yesterday_feelslike = feelslike(yesterday_temp, yesterday_pressure, yesterday_speed)
+
+            return '(today_temp - yesterday_temp): %f' %(today_feelslike - yesterday_feelslike)
 
         # Error checking and input validation
         zipcode = self.request.get('zip', None)
@@ -92,7 +105,8 @@ class API(webapp2.RequestHandler):
         url = 'http://api.openweathermap.org/data/2.5/station/find?lat='+lat+'&lon='+lng+'&cnt=1' #get a lot of nearby stations? idk
         yesterday_id = today['sys']['id'] # weather station ID of the data gotten from 'todays data'
         url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=hour&cnt=30'
-        url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=day&type=tick&cnt=20'
+        url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=day&type=tick&cnt=2'
+        url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=day&cnt=3'
         yesterday = json.loads(urllib2.urlopen(url).read())
 
         #TOMORROW
