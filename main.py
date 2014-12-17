@@ -1,3 +1,5 @@
+#big thx to worldweatheronline api
+
 import webapp2
 import datetime
 import os
@@ -17,7 +19,7 @@ class API(webapp2.RequestHandler):
         self.response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
         self.response.headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT'
 
-    def get(self):
+    def get(self, req_type=None):
         self.response.headers['Access-Control-Allow-Origin'] = '*'
         self.response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
         self.response.headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT'
@@ -42,7 +44,7 @@ class API(webapp2.RequestHandler):
             today_max = today['data']['weather'][0]['maxtempF']
             tomorrow_max = tomorrow['data']['weather'][0]['maxtempF']
 
-            #TODO: nighttime
+            #TODO: nighttime?
 
             return '(today_max - tomorrow_max): %f' %(float(today_max) - float(tomorrow_max))
 
@@ -51,16 +53,30 @@ class API(webapp2.RequestHandler):
             today_max = today['data']['weather'][0]['maxtempF']
             yesterday_max = yesterday['data']['weather'][0]['maxtempF']
 
-            #TODO: nighttime
+            #TODO: nighttime?
 
             return '(today_max - yesterday_max): %f' %(float(today_max) - float(yesterday_max))
 
         # Error checking and input validation
+        response = {}
+
+        include_today = True
+        include_tomorrow = True
+        if req_type:
+            include_today = (req_type == 'today')
+            include_tomorrow = (req_type == 'tomorrow')
+
+        if not include_today and not include_tomorrow:
+            logging.warn('Invalid API request - given req_type: "' + req_type + '"')
+            response['err'] = 'Invalid API request - bad API request type "' + req_type + '"'
+            response['fault'] = 'yours'
+            write(response)
+            return
+
         zipcode = self.request.get('zip', None)
         lat = self.request.get('lat', None)
         lng = self.request.get('lng', None)
 
-        response = {}
         try: # what gorgeous error checking (not)
             if not (lat and lng) and not zipcode:
                 raise TypeError
@@ -97,20 +113,22 @@ class API(webapp2.RequestHandler):
         url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng
         today = json.loads(urllib2.urlopen(url).read())
 
-        #YESTERDAY - yesterday, midnight (AM)
-        url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+yesterday_datetime.strftime('%Y-%m-%d')
-        yesterday = json.loads(urllib2.urlopen(url).read())
+        if include_today:
+            #YESTERDAY - yesterday, midnight (AM)
+            url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+yesterday_datetime.strftime('%Y-%m-%d')
+            yesterday = json.loads(urllib2.urlopen(url).read())
+            response['today'] = get_today(yesterday, today)
 
-        #TOMORROW
-        url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow_datetime.strftime('%Y-%m-%d')
-        tomorrow = json.loads(urllib2.urlopen(url).read())
+        if include_tomorrow:
+            #TOMORROW
+            url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow_datetime.strftime('%Y-%m-%d')
+            tomorrow = json.loads(urllib2.urlopen(url).read())
+            response['tomorrow'] = get_tomorrow(today, tomorrow)
 
         #LOCATION
         url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng='+lat+','+lng+'&key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'
         location = json.loads(urllib2.urlopen(url).read())
 
-        response['tomorrow'] = get_tomorrow(today, tomorrow)
-        response['today'] = get_today(yesterday, today)
         response['city'] = location['results'][0]['address_components'][2]['long_name']
         if location['results'][0]['address_components'][5]['short_name'] != 'US': #THEN THEY ARE A COMMUNIST
             response['state'] = location['results'][0]['address_components'][5]['short_name']
@@ -132,7 +150,8 @@ class MainHandler(webapp2.RequestHandler):
 
 
 app = webapp2.WSGIApplication([
-    ('/api', API),
+    (r'/api', API),
+    (r'/api/(.*)', API),
     ('/', MainHandler)
 ], debug=True)
 
