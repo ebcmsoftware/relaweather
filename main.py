@@ -28,24 +28,42 @@ class API(webapp2.RequestHandler):
         def write(response):
             self.response.write(json.dumps(response, separators=(',',':'), sort_keys=True))
 
-        #TODO: LOGIC
+        #TODO: VERIFY THIS VERIFY THIS VERIFY THIS PLEEEAAASSSEEEE**************************************************** XXX
         # tri-hourly times are 
-            # 0: 12am
-            # 1: 3am
-            # 2: 6am
-            # 3: 9am
-            # 4: 12pm
-            # 5: 3pm
-            # 6: 6pm
-            # 7: 9pm
-        # lol im not sure on this just a guess.
+            # 0: 12am-3am
+            # 1: 3am-6am
+            # 2: 6am-9am
+            # 3: 9am-12pm
+            # 4: 12pm-3pm
+            # 5: 3pm-6pm
+            # 6: 6pm-9pm
+            # 7: 9pm-12am
+
+        def get_avg(data, param, day_night='day'):
+            avg = 0.0
+            if day_night == 'day':
+                for i in range(4): #4*3 = 12. things are measured in 3hr periods, 12hrs is half the day.
+                    avg += float(data['data']['weather'][0]['hourly'][i+2][param]) # 2, 3, 4, 5
+                avg /= 4.0
+                return avg
+            elif day_night == 'night':
+                for i in range(4): #4*3 = 12. things are measured in 3hr periods, 12hrs is half the day.
+                    avg += float(data['data']['weather'][0]['hourly'][(i+6) % 8][param]) # 6, 7, 0, 1
+                avg /= 4.0
+                return avg
+            pass
+
         def get_tomorrow(today, tomorrow):
             # daytime
             today_max = today['data']['weather'][0]['maxtempF']
             tomorrow_max = tomorrow['data']['weather'][0]['maxtempF']
 
+            today_rain = get_avg(today, 'precipMM')
+            tomorrow_rain = get_avg(tomorrow, 'precipMM')
+
             #TODO: nighttime?
 
+            return '(today_rain - tomorrow_rain): %f' %(float(today_rain) - float(tomorrow_rain))
             return '(today_max - tomorrow_max): %f' %(float(today_max) - float(tomorrow_max))
 
         def get_today(yesterday, today):
@@ -53,8 +71,12 @@ class API(webapp2.RequestHandler):
             today_max = today['data']['weather'][0]['maxtempF']
             yesterday_max = yesterday['data']['weather'][0]['maxtempF']
 
+            today_rain = get_avg(today, 'precipMM')
+            yesterday_rain = get_avg(yesterday, 'precipMM')
+
             #TODO: nighttime?
 
+            return '(today_rain - yesterday_rain): %f' %(float(today_rain) - float(yesterday_rain))
             return '(today_max - yesterday_max): %f' %(float(today_max) - float(yesterday_max))
 
         # Error checking and input validation
