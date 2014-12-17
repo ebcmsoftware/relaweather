@@ -26,41 +26,34 @@ class API(webapp2.RequestHandler):
         def write(response):
             self.response.write(json.dumps(response, separators=(',',':'), sort_keys=True))
 
-        # temp in Celsius, vapor_pressure in kPa, wind_speed in m/sec
-        def feelslike(temp, vapor_pressure, wind_speed):
-            return -2.7 + 1.04*(temp-273.15) + 2.0*vapor_pressure - 0.65*wind_speed
-
         #TODO: LOGIC
+        # tri-hourly times are 
+            # 0: 12am
+            # 1: 3am
+            # 2: 6am
+            # 3: 9am
+            # 4: 12pm
+            # 5: 3pm
+            # 6: 6pm
+            # 7: 9pm
+        # lol im not sure on this just a guess.
         def get_tomorrow(today, tomorrow):
-            today_temp = today['main']['temp']
-            today_pressure = today['main']['pressure'] / 1000.0
-            today_speed = today['wind']['speed']
+            # daytime
+            today_max = today['data']['weather'][0]['maxtempF']
+            tomorrow_max = tomorrow['data']['weather'][0]['maxtempF']
 
-            tomorrow_temp = tomorrow['list'][0]['temp']['day']
-            tomorrow_pressure = tomorrow['list'][0]['pressure'] / 1000.0
-            tomorrow_speed = tomorrow['list'][0]['speed']
+            #TODO: nighttime
 
-            today_feelslike = feelslike(today_temp, today_pressure, today_speed)
-            tomorrow_feelslike = feelslike(tomorrow_temp, tomorrow_pressure, tomorrow_speed)
+            return '(today_max - tomorrow_max): %f' %(float(today_max) - float(tomorrow_max))
 
-            return '(today_temp - tomorrow_temp): %f' %(today_feelslike - tomorrow_feelslike)
-
-        #technically the 'yesterday' data is from midnight so mayb we should fix that
         def get_today(yesterday, today):
-            write(yesterday) 
-            return
-            today_temp = today['main']['temp']
-            today_pressure = today['main']['pressure'] / 1000.0
-            today_speed = today['wind']['speed']
+            # daytime
+            today_max = today['data']['weather'][0]['maxtempF']
+            yesterday_max = yesterday['data']['weather'][0]['maxtempF']
 
-            yesterday_temp = yesterday['list'][0]['temp']['v']
-            yesterday_pressure = yesterday['list'][0]['pressure']['v'] / 1000.0
-            yesterday_speed = yesterday['list'][0]['wind']['speed']['v']
+            #TODO: nighttime
 
-            today_feelslike = feelslike(today_temp, today_pressure, today_speed)
-            yesterday_feelslike = feelslike(yesterday_temp, yesterday_pressure, yesterday_speed)
-
-            return '(today_temp - yesterday_temp): %f' %(today_feelslike - yesterday_feelslike)
+            return '(today_max - yesterday_max): %f' %(float(today_max) - float(yesterday_max))
 
         # Error checking and input validation
         zipcode = self.request.get('zip', None)
@@ -96,21 +89,20 @@ class API(webapp2.RequestHandler):
             location = json.loads(urllib2.urlopen(url).read())
             lat = str(location['results'][0]['geometry']['location']['lat'])
             lng = str(location['results'][0]['geometry']['location']['lng'])
-        #use lat+lng to get data
+
+        key = '71f6bcee6c068c552bf84460d5409'
+        yesterday_datetime = datetime.date.today() - datetime.timedelta(1)
+        tomorrow_datetime = datetime.date.today() + datetime.timedelta(1)
         #TODAY
-        url = 'http://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lng
+        url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng
         today = json.loads(urllib2.urlopen(url).read())
 
-        #YESTERDAY
-        url = 'http://api.openweathermap.org/data/2.5/station/find?lat='+lat+'&lon='+lng+'&cnt=1' #get a lot of nearby stations? idk
-        yesterday_id = today['sys']['id'] # weather station ID of the data gotten from 'todays data'
-        url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=hour&cnt=30'
-        url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=day&type=tick&cnt=2'
-        url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=day&cnt=3'
+        #YESTERDAY - yesterday, midnight (AM)
+        url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+yesterday_datetime.strftime('%Y-%m-%d')
         yesterday = json.loads(urllib2.urlopen(url).read())
 
         #TOMORROW
-        url = 'http://api.openweathermap.org/data/2.5/forecast/daily?lat='+lat+'&lon='+lng+'&cnt=1&mode=json'
+        url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow_datetime.strftime('%Y-%m-%d')
         tomorrow = json.loads(urllib2.urlopen(url).read())
 
         #LOCATION
