@@ -76,9 +76,9 @@ def get_today_precip(today):
     #total precipitation (in MM? doesnt seem right.) for today
     if today_precip == 0:
         return None
-    if today_precip < 0.1:
+    if today_precip < 0.5:
         return random.choice(['occasionally drizzly', 'with scattered rain'])
-    elif today_precip < 0.2:
+    elif today_precip < 3.0:
         return random.choice(['with a little precipitation', 'with slight rain', 'with some showers'])
     else: 
         return 'rainy'
