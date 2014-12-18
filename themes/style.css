@@ -46,6 +46,10 @@ a:visited {
 
 }
 
+#forecast {
+	margin-bottom: 50px;
+}
+
 .submit_button {
     border-radius: 0px;
     border: 0;

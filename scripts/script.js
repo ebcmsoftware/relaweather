@@ -1,19 +1,5 @@
 //:^)
-$( document ).ready(function() {
-    $('#location_name').hide();
-    $('#location_form').hide();
-    $('#change_location').hide();
-});
-
-function get_success(data) {
-    console.log("hey I got data");
-    var weather_dat = JSON.parse(data);
-    weather = "today it is " + weather_dat.today + " than yesterday";
-    place = weather_dat.city + ", " + weather_dat.state
-    show_weather(weather, place);
-}
-
-if (navigator.geolocation) {
+function use_geolocation() {
     var options = {
         enableHighAccuracy: true,
         maximumAge: 0
@@ -33,6 +19,23 @@ if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(success, error, options);
 }
 
+$( document ).ready(function() {
+    $('#location_name').hide();
+    $('#location_form').hide();
+    $('#change_location').hide();
+    if (navigator.geolocation) {
+        use_geolocation();
+    }
+});
+
+function get_success(data) {
+    console.log("hey I got data");
+    var weather_dat = JSON.parse(data);
+    weather = "today it is " + weather_dat.today + " than yesterday";
+    place = weather_dat.city + ", " + weather_dat.state
+    show_weather(weather, place);
+}
+
 $('#zip_submit').click(function() {
     var zip_code = $('#zip_box').val(); 
     if (zip_code.match(/^[0-9]{5}/) != null) {
@@ -44,6 +47,14 @@ $('#zip_submit').click(function() {
 
 $('#change_location').click(function() {
     $('#location_form').show();
+    $('#forecast').hide();
+    $('#change_location').hide();
+});
+
+$('#use_geolocation').click(function() {
+    if (navigator.geolocation) {
+        use_geolocation();
+    }
 });
 
 function show_weather(weather_string, place_string){
