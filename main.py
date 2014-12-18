@@ -1,3 +1,5 @@
+#big thx to worldweatheronline api
+
 import webapp2
 import datetime
 import os
@@ -17,7 +19,7 @@ class API(webapp2.RequestHandler):
         self.response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
         self.response.headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT'
 
-    def get(self):
+    def get(self, req_type=None):
         self.response.headers['Access-Control-Allow-Origin'] = '*'
         self.response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
         self.response.headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT'
@@ -92,11 +94,25 @@ class API(webapp2.RequestHandler):
             return '(today_max - yesterday_max): %f' %(float(today_max) - float(yesterday_max))
 
         # Error checking and input validation
+        response = {}
+
+        include_today = True
+        include_tomorrow = True
+        if req_type:
+            include_today = (req_type == 'today')
+            include_tomorrow = (req_type == 'tomorrow')
+
+        if not include_today and not include_tomorrow:
+            logging.warn('Invalid API request - given req_type: "' + req_type + '"')
+            response['err'] = 'Invalid API request - bad API request type "' + req_type + '"'
+            response['fault'] = 'yours'
+            write(response)
+            return
+
         zipcode = self.request.get('zip', None)
         lat = self.request.get('lat', None)
         lng = self.request.get('lng', None)
 
-        response = {}
         try: # what gorgeous error checking (not)
             if not (lat and lng) and not zipcode:
                 raise TypeError
@@ -125,9 +141,12 @@ class API(webapp2.RequestHandler):
             location = json.loads(urllib2.urlopen(url).read())
             lat = str(location['results'][0]['geometry']['location']['lat'])
             lng = str(location['results'][0]['geometry']['location']['lng'])
-        #use lat+lng to get data
+
+        key = '71f6bcee6c068c552bf84460d5409'
+        yesterday_datetime = datetime.date.today() - datetime.timedelta(1)
+        tomorrow_datetime = datetime.date.today() + datetime.timedelta(1)
         #TODAY
-        url = 'http://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lng
+        url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng
         today = json.loads(urllib2.urlopen(url).read())
 
         if include_today:
@@ -152,8 +171,6 @@ class API(webapp2.RequestHandler):
         url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng='+lat+','+lng+'&key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'
         location = json.loads(urllib2.urlopen(url).read())
 
-        response['tomorrow'] = get_tomorrow(today, tomorrow)
-        response['today'] = get_today(yesterday, today)
         response['city'] = location['results'][0]['address_components'][2]['long_name']
         if location['results'][0]['address_components'][5]['short_name'] != 'US': #THEN THEY ARE A COMMUNIST
             response['state'] = location['results'][0]['address_components'][5]['short_name']
@@ -163,15 +180,9 @@ class API(webapp2.RequestHandler):
             response['zip'] = location['results'][0]['address_components'][6]['short_name']
         write(response)
         return # send the data
-
-        ######################### TESTING #######################
-        self.response.write('TODAYS DATA:<br>') 
-        write(today)
-        self.response.write('<br><br>YESTERDAYS DATA:<br>')
         write(yesterday)
-        self.response.write('<br><br>TOMORROWS DATA:<br>')
-        write(tomorrow)
-        ######################### /TESTING ######################
+
+
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
@@ -181,7 +192,8 @@ class MainHandler(webapp2.RequestHandler):
 
 
 app = webapp2.WSGIApplication([
-    ('/api', API),
+    (r'/api', API),
+    (r'/api/(.*)', API),
     ('/', MainHandler)
 ], debug=True)
 
