@@ -31,7 +31,7 @@ $( document ).ready(function() {
 function get_success(data) {
     console.log("hey I got data");
     var weather_dat = JSON.parse(data);
-    weather = "today it is " + weather_dat.today + " than yesterday";
+    weather = weather_dat.today;
     place = weather_dat.city + ", " + weather_dat.state
     show_weather(weather, place);
 }
@@ -41,7 +41,7 @@ $('#zip_submit').click(function() {
     if (zip_code.match(/^[0-9]{5}/) != null) {
         $.get('/api?zip='+zip_code, get_success);
     } else {
-            alert("That's not a valid location.");
+        alert("That's not a valid location.");
     }
 });
 
