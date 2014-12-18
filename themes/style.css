@@ -11,14 +11,23 @@ body{
 
 h1 {
 	font-size: 3em;
+	 
 }
 
 h2 {
 	font-size: 1.5em;
 }
 
+h4 {
+	font-size: 1em;
+}
+
 a {
 	text-decoration: none;
+}
+
+hr {
+	width: 50%;
 }
 
 a:visited {
@@ -26,11 +35,15 @@ a:visited {
 }
 
 #app_title {
-	padding-top: 40px;
+	margin-bottom: 10px;
+}
+
+#app_title h1{
+	margin: 0px;
 }
 
 #location_form {
-	padding-top: 60px;
+
 }
 
 .submit_button {

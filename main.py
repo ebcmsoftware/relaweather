@@ -1,5 +1,3 @@
-#big thx to worldweatheronline api
-
 import webapp2
 import datetime
 import os
@@ -19,7 +17,7 @@ class API(webapp2.RequestHandler):
         self.response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
         self.response.headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT'
 
-    def get(self, req_type=None):
+    def get(self):
         self.response.headers['Access-Control-Allow-Origin'] = '*'
         self.response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
         self.response.headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT'
@@ -28,77 +26,20 @@ class API(webapp2.RequestHandler):
         def write(response):
             self.response.write(json.dumps(response, separators=(',',':'), sort_keys=True))
 
-        #TODO: VERIFY THIS VERIFY THIS VERIFY THIS PLEEEAAASSSEEEE**************************************************** XXX
-        # tri-hourly times are 
-            # 0: 12am-3am
-            # 1: 3am-6am
-            # 2: 6am-9am
-            # 3: 9am-12pm
-            # 4: 12pm-3pm
-            # 5: 3pm-6pm
-            # 6: 6pm-9pm
-            # 7: 9pm-12am
-
-        def get_avg(data, param, day_night='day'):
-            avg = 0.0
-            if day_night == 'day':
-                for i in range(4): #4*3 = 12. things are measured in 3hr periods, 12hrs is half the day.
-                    avg += float(data['data']['weather'][0]['hourly'][i+2][param]) # 2, 3, 4, 5
-                avg /= 4.0
-                return avg
-            elif day_night == 'night':
-                for i in range(4): #4*3 = 12. things are measured in 3hr periods, 12hrs is half the day.
-                    avg += float(data['data']['weather'][0]['hourly'][(i+6) % 8][param]) # 6, 7, 0, 1
-                avg /= 4.0
-                return avg
-            pass
-
+        #TODO: LOGIC
         def get_tomorrow(today, tomorrow):
-            # daytime
-            today_max = today['data']['weather'][0]['maxtempF']
-            tomorrow_max = tomorrow['data']['weather'][0]['maxtempF']
+            return 'hotter'
 
-            today_rain = get_avg(today, 'precipMM')
-            tomorrow_rain = get_avg(tomorrow, 'precipMM')
-
-            #TODO: nighttime?
-
-            return '(today_rain - tomorrow_rain): %f' %(float(today_rain) - float(tomorrow_rain))
-            return '(today_max - tomorrow_max): %f' %(float(today_max) - float(tomorrow_max))
-
+        #TODO: LOGIC
         def get_today(yesterday, today):
-            # daytime
-            today_max = today['data']['weather'][0]['maxtempF']
-            yesterday_max = yesterday['data']['weather'][0]['maxtempF']
-
-            today_rain = get_avg(today, 'precipMM')
-            yesterday_rain = get_avg(yesterday, 'precipMM')
-
-            #TODO: nighttime?
-
-            return '(today_rain - yesterday_rain): %f' %(float(today_rain) - float(yesterday_rain))
-            return '(today_max - yesterday_max): %f' %(float(today_max) - float(yesterday_max))
+            return 'colder'
 
         # Error checking and input validation
-        response = {}
-
-        include_today = True
-        include_tomorrow = True
-        if req_type:
-            include_today = (req_type == 'today')
-            include_tomorrow = (req_type == 'tomorrow')
-
-        if not include_today and not include_tomorrow:
-            logging.warn('Invalid API request - given req_type: "' + req_type + '"')
-            response['err'] = 'Invalid API request - bad API request type "' + req_type + '"'
-            response['fault'] = 'yours'
-            write(response)
-            return
-
         zipcode = self.request.get('zip', None)
         lat = self.request.get('lat', None)
         lng = self.request.get('lng', None)
 
+        response = {}
         try: # what gorgeous error checking (not)
             if not (lat and lng) and not zipcode:
                 raise TypeError
@@ -127,30 +68,27 @@ class API(webapp2.RequestHandler):
             location = json.loads(urllib2.urlopen(url).read())
             lat = str(location['results'][0]['geometry']['location']['lat'])
             lng = str(location['results'][0]['geometry']['location']['lng'])
-
-        key = '71f6bcee6c068c552bf84460d5409'
-        yesterday_datetime = datetime.date.today() - datetime.timedelta(1)
-        tomorrow_datetime = datetime.date.today() + datetime.timedelta(1)
+        #use lat+lng to get data
         #TODAY
-        url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng
+        url = 'http://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lng
         today = json.loads(urllib2.urlopen(url).read())
 
-        if include_today:
-            #YESTERDAY - yesterday, midnight (AM)
-            url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+yesterday_datetime.strftime('%Y-%m-%d')
-            yesterday = json.loads(urllib2.urlopen(url).read())
-            response['today'] = get_today(yesterday, today)
+        #YESTERDAY
+        url = 'http://api.openweathermap.org/data/2.5/station/find?lat='+lat+'&lon='+lng+'&cnt=1' #get a lot of nearby stations? idk
+        yesterday_id = json.loads(urllib2.urlopen(url).read())[0]['station']['id'] # station ID of the closest station to that user
+        url = 'http://api.openweathermap.org/data/2.5/history/station?id='+str(yesterday_id)+'&type=hour&cnt=30'
+        yesterday = json.loads(urllib2.urlopen(url).read())
 
-        if include_tomorrow:
-            #TOMORROW
-            url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow_datetime.strftime('%Y-%m-%d')
-            tomorrow = json.loads(urllib2.urlopen(url).read())
-            response['tomorrow'] = get_tomorrow(today, tomorrow)
+        #TOMORROW
+        url = 'http://api.openweathermap.org/data/2.5/forecast/daily?lat='+lat+'&lon='+lng+'&cnt=1&mode=json'
+        tomorrow = json.loads(urllib2.urlopen(url).read())
 
         #LOCATION
         url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng='+lat+','+lng+'&key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'
         location = json.loads(urllib2.urlopen(url).read())
 
+        response['tomorrow'] = get_tomorrow(today, tomorrow)
+        response['today'] = get_today(yesterday, today)
         response['city'] = location['results'][0]['address_components'][2]['long_name']
         if location['results'][0]['address_components'][5]['short_name'] != 'US': #THEN THEY ARE A COMMUNIST
             response['state'] = location['results'][0]['address_components'][5]['short_name']
@@ -160,8 +98,15 @@ class API(webapp2.RequestHandler):
             response['zip'] = location['results'][0]['address_components'][6]['short_name']
         write(response)
         return # send the data
-        write(yesterday)
 
+        ######################### TESTING #######################
+        self.response.write('TODAYS DATA:<br>') 
+        write(today)
+        self.response.write('<br><br>YESTERDAYS DATA:<br>')
+        write(yesterday)
+        self.response.write('<br><br>TOMORROWS DATA:<br>')
+        write(tomorrow)
+        ######################### /TESTING ######################
 
 
 class MainHandler(webapp2.RequestHandler):
@@ -172,8 +117,7 @@ class MainHandler(webapp2.RequestHandler):
 
 
 app = webapp2.WSGIApplication([
-    (r'/api', API),
-    (r'/api/(.*)', API),
+    ('/api', API),
     ('/', MainHandler)
 ], debug=True)
 

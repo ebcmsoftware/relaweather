@@ -9,10 +9,15 @@
 <meta name="mobile-web-app-capable" content="yes">
 </head>
 <body>
-	<h1 id = "app_title">RelaWeather</h1>
-	<h2>What's the weather?</h2>
-	<h2 id = "location_name">City Name</h2>
-	<h2 id = "weather_desc">loading...</h2>
+	<div id = "app_title">
+		<h1>RelaWeather</h1>
+		<h4>Relavent & relative weather forecast</h4>
+		<hr>
+	</div>
+	<div id = "forecast">
+		<h2 id = "location_name">City Name</h2>
+		<h2 id = "weather_desc">loading...</h2>
+	</div>
 	<div id = "location_form">
 		<h2>Enter your location:</h2>
 		<form id = "zip_form">
@@ -20,6 +25,7 @@
 			<input class = "submit_button" id = "zip_submit" type = "submit" value = "Go">
 		</form>
 	</div>
+	<input class = "submit_button" id = "change_location" type = "submit" value = "Change Location">
 	<footer id = "footer"><a  href = "http://ebcmsoftware.com" target="_blank">&copy; EBCM Software 2014</a> &nbsp;|&nbsp; <a href = "http://ebcmsoftware.com/donate/" target = "_blank"> Donate</a>  <a id = "source" href = "https://github.com/charles-meyer/relaweather">&nbsp;|&nbsp; Source</a>
   </footer>
 </body>
