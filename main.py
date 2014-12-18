@@ -61,11 +61,6 @@ def get_tomorrow_temp(today, tomorrow):
     return '(today_max - tomorrow_max): %f' %(float(today_max) - float(tomorrow_max))
 
 
-#TODO: find if rain or snow. somehow. be smart
-def get_today_precip(today):
-    today_precip = get_avg(today, 'precipMM') * 12.0 # (hourly avg over 12 hrs) * 12 = total
-    return 'it will rain a little probably'
-
 def get_tonight_precip(today):
     today_precip = get_avg(today, 'precipMM', night=True) * 12.0 
     return today_precip
@@ -75,20 +70,36 @@ def get_tonight_temp(yesterday, today):
     yesterday_min = yesterday['data']['weather'][0]['mintempF']
     return '(today_min - yesterday_min): %f' %(float(today_min) - float(yesterday_min))
 
-def get_today_temp(yesterday, today):
+def get_today_precip(today):
+    today_precip = get_avg(today, 'precipMM') * 12.0 # (hourly avg over 12 hrs) * 12 = total
+    #TODO: find thresholds. find rain or snow or hail or...
+    if today_precip == 0:
+        return None
+    if today_precip < 0.1:
+        return random.choice(['occasionally drizzly', 'with scattered rain'])
+    elif today_precip < 0.2:
+        return random.choice(['with a little precipitation', 'with slight rain', 'with some showers'])
+    else: 
+        return 'rainy'
+
+def get_today_temp_forecast(yesterday, today):
     today_max = today['data']['weather'][0]['maxtempF']
     yesterday_max = yesterday['data']['weather'][0]['maxtempF']
     today_diff = float(today_max) - float(yesterday_max)
+    logging.info(today_diff)
     hot_or_cold = ''
+    if today_diff == 0:
+        return 'today is gonna be about the same temperature as yesterday'
     if today_diff > 0:
         hot_or_cold = 'hotter'
     else:
         hot_or_cold = 'colder'
     today_diff = abs(today_diff)
-    if today_diff < 1:
+    # begin CSC
+    if today_diff < 3:
         adj = random.choice(['a little ', 'a bit ', 'slightly '])
         return 'today is ' + adj + hot_or_cold + ' than yesterday'
-    elif today_diff < 5:
+    elif today_diff < 6:
         adj = random.choice([' ', 'noticeably '])
         return 'today is ' + adj + hot_or_cold + ' than yesterday'
     else:
@@ -96,11 +107,14 @@ def get_today_temp(yesterday, today):
         return 'today is ' + adj + hot_or_cold + ' than yesterday'
 
 def get_today_forecast(yesterday, today):
-    temperature = get_today_temp(yesterday, today)
+    temperature = get_today_temp_forecast(yesterday, today)
     precip = get_today_precip(today)
+    # CSC
     if precip != None:
+        logging.info(temperature + ' and ' + precip)
         return temperature + ' and ' + precip
     else:
+        logging.info(temperature)
         return temperature
 
 def search_location(location, address_component, param='short_name'):
@@ -192,8 +206,6 @@ class API(webapp2.RequestHandler):
 
             response['today'] = get_today_forecast(yesterday, today)
             response['tonight'] = get_tonight_temp(yesterday, today)
-            response['today_precip'] = get_today_precip(today)
-            response['tonight_precip'] = get_tonight_precip(today)
 
         if include_tomorrow: #compare tomorrow to today
             tomorrow_datetime = datetime.date.today() + datetime.timedelta(1)
@@ -206,8 +218,6 @@ class API(webapp2.RequestHandler):
 
             response['tomorrow'] = get_tomorrow_temp(today, tomorrow)
             response['tomorrow_night'] = get_tomorrow_night_temp(today, tomorrow)
-            response['tomorrow_precip'] = get_tomorrow_precip(tomorrow)
-            response['tomorrow_night_precip'] = get_tomorrow_night_precip(tomorrow)
 
         #LOCATION
         url = 'https://maps.googleapis.com/maps/api/geocode/json'+ \
