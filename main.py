@@ -150,15 +150,20 @@ class API(webapp2.RequestHandler):
             lng = str(location['results'][0]['geometry']['location']['lng'])
 
         key = '71f6bcee6c068c552bf84460d5409'
-        yesterday_datetime = datetime.date.today() - datetime.timedelta(1)
-        tomorrow_datetime = datetime.date.today() + datetime.timedelta(1)
 
-        #today's data
-        url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng
+        url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx'+ \
+              '?key='+key+ \
+              '&format=json'+ \
+              '&q='+lat+','+lng
         today = json.loads(urllib2.urlopen(url).read())
 
-        if include_today:
-            url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+yesterday_datetime.strftime('%Y-%m-%d') #yesterday's data
+        if include_today: # compare today to yesterday
+            yesterday_datetime = datetime.date.today() - datetime.timedelta(1)
+            url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx'+ \
+                  '?key='+key+ \
+                  '&format=json'+ \
+                  '&q='+lat+','+lng+ \
+                  '&date='+yesterday_datetime.strftime('%Y-%m-%d')
             yesterday = json.loads(urllib2.urlopen(url).read())
 
             response['today'] = get_today_temp(yesterday, today)
@@ -166,8 +171,13 @@ class API(webapp2.RequestHandler):
             response['today_precip'] = get_today_precip(today)
             response['tonight_precip'] = get_tonight_precip(today)
 
-        if include_tomorrow:
-            url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow_datetime.strftime('%Y-%m-%d') #tomorrow's data
+        if include_tomorrow: #compare tomorrow to today
+            tomorrow_datetime = datetime.date.today() + datetime.timedelta(1)
+            url = 'http://api.worldweatheronline.com/free/v2/weather.ashx'+ \
+                  '?key='+key+ \
+                  '&format=json'+ \
+                  '&q='+lat+','+lng+ \
+                  '&date='+tomorrow_datetime.strftime('%Y-%m-%d')
             tomorrow = json.loads(urllib2.urlopen(url).read())
 
             response['tomorrow'] = get_tomorrow_temp(today, tomorrow)
@@ -176,12 +186,14 @@ class API(webapp2.RequestHandler):
             response['tomorrow_night_precip'] = get_tomorrow_night_precip(tomorrow)
 
         #LOCATION
-        url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng='+lat+','+lng+'&key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'
+        url = 'https://maps.googleapis.com/maps/api/geocode/json'+ \
+              '?key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'+ \
+              '&latlng='+lat+','+lng
         location = json.loads(urllib2.urlopen(url).read())
 
         response['city'] = search_location(location, 'locality')
-        if search_location(location, 'country') != 'US': #THEN THEY ARE A COMMUNIST
-            response['state'] = search_location(location, 'country', 'long_name') # stockholm, sweden
+        if search_location(location, 'country') not in ['US', 'USA']: #THEN THEY ARE A COMMUNIST
+            response['state'] = search_location(location, 'country', param='long_name') # stockholm, sweden
         else:
             response['state'] = search_location(location, 'administrative_area_level_1')
         response['zip'] = search_location(location, 'postal_code')
