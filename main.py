@@ -73,6 +73,7 @@ def get_tonight_temp(yesterday, today):
 def get_today_precip(today):
     today_precip = get_avg(today, 'precipMM') * 12.0 # (hourly avg over 12 hrs) * 12 = total
     #TODO: find thresholds. find rain or snow or hail or...
+    #total precipitation (in MM? doesnt seem right.) for today
     if today_precip == 0:
         return None
     if today_precip < 0.1:
