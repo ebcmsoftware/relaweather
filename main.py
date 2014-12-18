@@ -3,6 +3,7 @@
 import os
 import json
 import jinja2
+import random
 import logging
 import webapp2
 import urllib2
@@ -63,7 +64,7 @@ def get_tomorrow_temp(today, tomorrow):
 #TODO: find if rain or snow. somehow. be smart
 def get_today_precip(today):
     today_precip = get_avg(today, 'precipMM') * 12.0 # (hourly avg over 12 hrs) * 12 = total
-    return today_precip
+    return 'it will rain a little probably'
 
 def get_tonight_precip(today):
     today_precip = get_avg(today, 'precipMM', night=True) * 12.0 
@@ -75,9 +76,32 @@ def get_tonight_temp(yesterday, today):
     return '(today_min - yesterday_min): %f' %(float(today_min) - float(yesterday_min))
 
 def get_today_temp(yesterday, today):
-            today_max = today['data']['weather'][0]['maxtempF']
-            yesterday_max = yesterday['data']['weather'][0]['maxtempF']
-            return '(today_max - yesterday_max): %f' %(float(today_max) - float(yesterday_max))
+    today_max = today['data']['weather'][0]['maxtempF']
+    yesterday_max = yesterday['data']['weather'][0]['maxtempF']
+    today_diff = float(today_max) - float(yesterday_max)
+    hot_or_cold = ''
+    if today_diff > 0:
+        hot_or_cold = 'hotter'
+    else:
+        hot_or_cold = 'colder'
+    today_diff = abs(today_diff)
+    if today_diff < 1:
+        adj = random.choice(['a little ', 'a bit ', 'slightly '])
+        return 'today is ' + adj + hot_or_cold + ' than yesterday'
+    elif today_diff < 5:
+        adj = random.choice([' ', 'noticeably '])
+        return 'today is ' + adj + hot_or_cold + ' than yesterday'
+    else:
+        adj = random.choice(['a fuck ton '])
+        return 'today is ' + adj + hot_or_cold + ' than yesterday'
+
+def get_today_forecast(yesterday, today):
+    temperature = get_today_temp(yesterday, today)
+    precip = get_today_precip(today)
+    if precip != None:
+        return temperature + ' and ' + precip
+    else:
+        return temperature
 
 def search_location(location, address_component, param='short_name'):
     components = location['results'][0]['address_components']
@@ -166,7 +190,7 @@ class API(webapp2.RequestHandler):
                   '&date='+yesterday_datetime.strftime('%Y-%m-%d')
             yesterday = json.loads(urllib2.urlopen(url).read())
 
-            response['today'] = get_today_temp(yesterday, today)
+            response['today'] = get_today_forecast(yesterday, today)
             response['tonight'] = get_tonight_temp(yesterday, today)
             response['today_precip'] = get_today_precip(today)
             response['tonight_precip'] = get_tonight_precip(today)
