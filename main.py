@@ -60,13 +60,13 @@ def get_tonight_temp_forecast(yesterday, today):
 #generalized precip getter
 #TODO: find if rain or snow. somehow. be smart. use ['weatherDesc']['value']?
 #TODO: thresholldddssssssss
-def get_precip(weather_data, night=False):
-    total_precip = get_avg(weather_data, 'precipMM', night) * 12.0 # (hourly avg over 12 hrs) * 12 = total
+def get_precip(total_precip):
+     # (hourly avg over 12 hrs) * 12 = total
     #total precipitation (in MM? doesnt seem right.) for today
     if total_precip == 0:
         return None
-    if total_precip < 0.5:
-        return random.choice(['occasionally drizzly', 'with scattered rain'])
+    if total_precip < 1:
+        return random.choice(['occasionally drizzly', 'sprikles'])
     elif total_precip < 5.0:
         return random.choice(['with a little precipitation', 'with slight rain', 'with some showers'])
     elif total_precip < 20.0: 
@@ -101,6 +101,17 @@ def get_today_temp_forecast(yesterday, today):
 def get_today_forecast(yesterday, today):
     temperature = get_today_temp_forecast(yesterday, today)
     precip = get_precip(today)
+    # CSC
+    if precip != None:
+        logging.info(temperature + ' and ' + precip)
+        return temperature + ' and ' + precip
+    else:
+        logging.info(temperature)
+        return temperature
+
+def tomorrow_forecast(today, tomorrow):
+    temperature = get_temp_forecast(yesterday, today)
+    precip = get_precip(tomorrow)
     # CSC
     if precip != None:
         logging.info(temperature + ' and ' + precip)
