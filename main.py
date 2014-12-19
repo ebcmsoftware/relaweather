@@ -78,10 +78,12 @@ def get_today_precip(today):
         return None
     if today_precip < 0.5:
         return random.choice(['occasionally drizzly', 'with scattered rain'])
-    elif today_precip < 3.0:
+    elif today_precip < 5.0:
         return random.choice(['with a little precipitation', 'with slight rain', 'with some showers'])
-    else: 
+    elif today_precip < 20.0: 
         return 'rainy'
+    else:
+        return 'v. rainy'
 
 def get_today_temp_forecast(yesterday, today):
     today_max = today['data']['weather'][0]['maxtempF']
