@@ -47,7 +47,7 @@ def precip_forecast(day_data):
     if total_precip < 1.0:
         return random.choice(['drizzles', 'sprikles'])
     elif total_precip < 5.0:
-        return random.choice('a little precipitation', 'some showers'])
+        return random.choice(['a little precipitation', 'some showers'])
     elif total_precip < 20.0: 
         return random.choice(['steady rain', 'lots of rain'])
     else:
@@ -102,7 +102,11 @@ def today_forecast(yesterday, today):
 
     temperature = temp_forecast(yesterday_max, today_max)
     precip = precip_forecast(today)
-    to_return = 'today will be ' + temperature  + ' than yesterday with ' + precip
+    if precip:
+        to_return = 'today will be ' + temperature  + ' than yesterday with ' + precip
+    else:
+        logging.info(temperature)
+        to_return = 'today will be ' + temperature  + ' than yesterday'
     logging.info(to_return)
     return to_return
 
@@ -114,7 +118,10 @@ def tomorrow_forecast(today, tomorrow):
 
     temperature = temp_forecast(today_max, tomorrow_max)
     precip = precip_forecast(tomorrow)
-    to_return = 'tomorrow will be ' + temperature  + ' than today and ' + precip
+    if precip:
+        to_return = 'tomorrow will be ' + temperature  + ' than today and ' + precip
+    else:
+        to_return = 'tomorrow will be ' + temperature  + ' than today'
     logging.info(to_return)
     return to_return
 
