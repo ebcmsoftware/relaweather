@@ -59,20 +59,34 @@ def precip_forecast(total_precip):
     else:
         return 'v. rainy'
 
+#temp_diff here cannot be 0
+def hot_or_cold_adj(temp_diff, avg_temp):
+    if temp_diff < 0:
+        if avg_temp < 32:
+            return 'colder'
+        elif avg_temp < 50:
+            return 'chillier'
+        else:
+            return 'less hot'
+    if temp_diff > 0:
+        if avg_temp < 32:
+            return 'less cold'
+        elif avg_temp < 50:
+            return 'less chilly'
+        else:
+            return 'hotter'
+
 def temp_forecast(temp_before, temp_after):
-    today_diff = float(temp_after) - float(temp_before)
+    temp_diff = temp_after - temp_before
     hot_or_cold = ''
-    if today_diff == 0:
+    if temp_diff == 0:
         return 'about the same temperature'
-    if today_diff > 0:
-        hot_or_cold = 'hotter'
-    else:
-        hot_or_cold = 'colder'
-    today_diff = abs(today_diff)
+    hot_or_cold = hot_or_cold_adj(temp_diff, (temp_before + temp_after) / 2.0)
+    temp_diff = abs(temp_diff)
     # begin CSC
-    if today_diff < 3:
+    if temp_diff < 3:
         adj = random.choice(['a little', 'a bit', 'slightly'])
-    elif today_diff < 6:
+    elif temp_diff < 6:
         adj = random.choice(['', 'noticeably'])
         if adj == '':
             return hot_or_cold
@@ -81,8 +95,8 @@ def temp_forecast(temp_before, temp_after):
     return adj + ' ' + hot_or_cold
 
 def today_forecast(yesterday, today):
-    today_max = today['data']['weather'][0]['maxtempF']
-    yesterday_max = yesterday['data']['weather'][0]['maxtempF']
+    today_max = float(today['data']['weather'][0]['maxtempF'])
+    yesterday_max = float(yesterday['data']['weather'][0]['maxtempF'])
 
     temperature = temp_forecast(yesterday_max, today_max)
     precip = precip_forecast(today)
@@ -201,7 +215,7 @@ class API(webapp2.RequestHandler):
             yesterday = json.loads(urllib2.urlopen(url).read())
 
             response['today'] = today_forecast(yesterday, today)
-            response['tonight'] = tonight_temp_forecast(yesterday, today)
+            #response['tonight'] = tonight_temp_forecast(yesterday, today)
 
         if include_tomorrow: #compare tomorrow to today
             tomorrow_datetime = datetime.date.today() + datetime.timedelta(1) + datetime.timedelta(hours=hour_offset)
@@ -212,8 +226,8 @@ class API(webapp2.RequestHandler):
                   '&date='+tomorrow_datetime.strftime('%Y-%m-%d')
             tomorrow = json.loads(urllib2.urlopen(url).read())
 
-            response['tomorrow'] = tomorrow_temp_forecast(today, tomorrow)
-            response['tomorrow_night'] = tomorrow_night_temp_forecast(today, tomorrow)
+            response['tomorrow'] = tomorrow_forecast(today, tomorrow)
+            #response['tomorrow_night'] = tomorrow_night_temp_forecast(today, tomorrow)
 
         #LOCATION
         url = 'https://maps.googleapis.com/maps/api/geocode/json'+ \
