@@ -78,22 +78,22 @@ def hot_or_cold_adj(temp_diff, avg_temp):
         else:
             return 'hotter'
 
-# returns a string describing the difference betweetn temp_before and temp_after
+# returns a string describing the difference between temp_before and temp_after
 def temp_forecast(temp_before, temp_after):
     temp_diff = temp_after - temp_before
     hot_or_cold = ''
     if temp_diff == 0:
-        return 'about the same temperature'
+        return 'about the same temperature as'
     hot_or_cold = hot_or_cold_adj(temp_diff, (temp_before + temp_after) / 2.0)
     temp_diff = abs(temp_diff)
-    # begin CSC
+
     if temp_diff < 3:
         adj = random.choice(['a little', 'a bit', 'slightly'])
     elif 3 < temp_diff < 7:
-        return hot_or_cold # i don't think we need an adjective in this case
+        return hot_or_cold + ' than'
     else:
         adj = random.choice(['noticeably', 'much', 'a lot', 'quite a bit', 'considerably', 'appreciably'])
-    return adj + ' ' + hot_or_cold
+    return adj + ' ' + hot_or_cold + ' than'
 
 # returns a string with today's forecast given json objects from WWO
 # with weather for yesterday and today
@@ -105,12 +105,10 @@ def today_forecast(yesterday, today):
     total_precip = avg(today, 'precipMM') * 12.0
     precip = precip_forecast(total_precip)
 
+    verb = 'will be' #if past 10am, 'is', if past 5pm, 'was', etc
+    to_return = 'today ' + verb + ' ' + temperature + ' yesterday'
     if precip:
-        to_return = 'today will be ' + temperature  + ' than yesterday with ' + precip
-    else:
-        logging.info(temperature)
-        to_return = 'today will be ' + temperature  + ' than yesterday'
-    logging.info(to_return)
+        to_return += ' with ' + precip
     return to_return
 
 # returns a string with tomorrow's forecast given json objects from WWO
@@ -123,11 +121,10 @@ def tomorrow_forecast(today, tomorrow):
     total_precip = avg(tomorrow, 'precipMM') * 12.0
     precip = precip_forecast(total_precip)
 
+    verb = 'will be'
+    to_return = 'tomorrow ' + verb + ' ' + temperature + ' today'
     if precip:
-        to_return = 'tomorrow will be ' + temperature  + ' than today and ' + precip
-    else:
-        to_return = 'tomorrow will be ' + temperature  + ' than today'
-    logging.info(to_return)
+        to_return += ' with ' + precip
     return to_return
 
 def search_location(location, address_component, param='short_name'):
