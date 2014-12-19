@@ -212,7 +212,8 @@ class API(webapp2.RequestHandler):
         hour_offset = timezone_data['rawOffset'] / 3600
 
         if include_today: # compare today to yesterday
-            yesterday_datetime = datetime.date.today() - datetime.timedelta(1) + datetime.timedelta(hours=hour_offset)
+            yesterday_datetime = (datetime.datetime.now() + datetime.timedelta(hours=hour_offset)) - datetime.timedelta(1)
+            logging.info(yesterday_datetime)
             url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx'+ \
                   '?key='+key+ \
                   '&format=json'+ \
@@ -224,7 +225,8 @@ class API(webapp2.RequestHandler):
             #response['tonight'] = tonight_temp_forecast(yesterday, today)
 
         if include_tomorrow: #compare tomorrow to today
-            tomorrow_datetime = datetime.date.today() + datetime.timedelta(1) + datetime.timedelta(hours=hour_offset)
+            tomorrow_datetime = (datetime.datetime.now() + datetime.timedelta(hours=hour_offset)) + datetime.timedelta(1)
+            logging.info(tomorrow_datetime)
             url = 'http://api.worldweatheronline.com/free/v2/weather.ashx'+ \
                   '?key='+key+ \
                   '&format=json'+ \
