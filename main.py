@@ -2,11 +2,12 @@
 
 import os
 import json
+import time
 import jinja2
 import random
 import logging
-import webapp2
 import urllib2
+import webapp2
 import datetime
 
 
@@ -186,9 +187,15 @@ class API(webapp2.RequestHandler):
               '&q='+lat+','+lng
         today = json.loads(urllib2.urlopen(url).read())
 
+        url = 'https://maps.googleapis.com/maps/api/timezone/json?key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg' + \
+              '&timestamp='+str(int(time.mktime(datetime.datetime.now().timetuple()))) + \
+              '&location='+lat+','+lng
+        timezone_data = json.loads(urllib2.urlopen(url).read())
+        hour_offset = timezone_data['rawOffset'] / 3600
+
         if include_today: # compare today to yesterday
             #TODO: time zone. get the time zone and get 'yesterday' based on what day it is today.
-            yesterday_datetime = datetime.date.today() - datetime.timedelta(1)
+            yesterday_datetime = datetime.date.today() - datetime.timedelta(1) + datetime.timedelta(hours=hour_offset)
             url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx'+ \
                   '?key='+key+ \
                   '&format=json'+ \
@@ -201,7 +208,7 @@ class API(webapp2.RequestHandler):
 
         if include_tomorrow: #compare tomorrow to today
             #TODO: time zone. get the time zone and get 'yesterday' based on what day it is today.
-            tomorrow_datetime = datetime.date.today() + datetime.timedelta(1)
+            tomorrow_datetime = datetime.date.today() + datetime.timedelta(1) + datetime.timedelta(hours=hour_offset)
             url = 'http://api.worldweatheronline.com/free/v2/weather.ashx'+ \
                   '?key='+key+ \
                   '&format=json'+ \
