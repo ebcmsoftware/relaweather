@@ -29,7 +29,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     # 7: 11pm-2am
 
 # hourly average for param
-def get_avg(weather_data, param, night=False):
+def avg(weather_data, param, night=False):
     avg = 0.0
     if night:
         for i in range(4): #4*3 = 12. things are measured in 3hr periods, 12hrs is half the day.
@@ -42,17 +42,17 @@ def get_avg(weather_data, param, night=False):
         avg /= 12.0
         return avg
 
-def get_tomorrow_night_temp_forecast(today, tomorrow):
+def tomorrow_night_temp_forecast(today, tomorrow):
     today_min = today['data']['weather'][0]['mintempF']
     tomorrow_min = tomorrow['data']['weather'][0]['mintempF']
     return '(today_min - tomorrow_min): %f' %(float(today_min) - float(tomorrow_min))
 
-def get_tomorrow_temp_forecast(today, tomorrow):
+def tomorrow_temp_forecast(today, tomorrow):
     today_max = today['data']['weather'][0]['maxtempF']
     tomorrow_max = tomorrow['data']['weather'][0]['maxtempF']
     return '(today_max - tomorrow_max): %f' %(float(today_max) - float(tomorrow_max))
 
-def get_tonight_temp_forecast(yesterday, today):
+def tonight_temp_forecast(yesterday, today):
     today_min = today['data']['weather'][0]['mintempF']
     yesterday_min = yesterday['data']['weather'][0]['mintempF']
     return '(today_min - yesterday_min): %f' %(float(today_min) - float(yesterday_min))
@@ -60,8 +60,8 @@ def get_tonight_temp_forecast(yesterday, today):
 #generalized precip getter
 #TODO: find if rain or snow. somehow. be smart. use ['weatherDesc']['value']?
 #TODO: thresholldddssssssss
-def get_precip(weather_data, night=False):
-    total_precip = get_avg(weather_data, 'precipMM', night) * 12.0 # (hourly avg over 12 hrs) * 12 = total
+def precip_forecast(weather_data, night=False):
+    total_precip = avg(weather_data, 'precipMM', night) * 12.0 # (hourly avg over 12 hrs) * 12 = total
     #total precipitation (in MM? doesnt seem right.) for today
     if total_precip == 0:
         return None
@@ -74,14 +74,12 @@ def get_precip(weather_data, night=False):
     else:
         return 'v. rainy'
 
-def get_today_temp_forecast(yesterday, today):
-    today_max = today['data']['weather'][0]['maxtempF']
-    yesterday_max = yesterday['data']['weather'][0]['maxtempF']
-    today_diff = float(today_max) - float(yesterday_max)
-    logging.info(today_diff)
+#def today_temp_forecast(yesterday, today):
+def temp_forecast(temp_before, temp_after):
+    today_diff = float(temp_after) - float(temp_before)
     hot_or_cold = ''
     if today_diff == 0:
-        return 'today is gonna be about the same temperature as yesterday'
+        return 'about the same temperature'
     if today_diff > 0:
         hot_or_cold = 'hotter'
     else:
@@ -89,25 +87,30 @@ def get_today_temp_forecast(yesterday, today):
     today_diff = abs(today_diff)
     # begin CSC
     if today_diff < 3:
-        adj = random.choice(['a little ', 'a bit ', 'slightly '])
-        return 'today is ' + adj + hot_or_cold + ' than yesterday'
+        adj = random.choice(['a little', 'a bit', 'slightly'])
     elif today_diff < 6:
-        adj = random.choice([' ', 'noticeably '])
-        return 'today is ' + adj + hot_or_cold + ' than yesterday'
+        adj = random.choice(['', 'noticeably'])
+        if adj == '':
+            return hot_or_cold
     else:
-        adj = random.choice(['a fuck ton '])
-        return 'today is ' + adj + hot_or_cold + ' than yesterday'
+        adj = random.choice(['a fuck ton'])
+    return adj + ' ' + hot_or_cold
 
-def get_today_forecast(yesterday, today):
-    temperature = get_today_temp_forecast(yesterday, today)
-    precip = get_precip(today)
+def today_forecast(yesterday, today):
+    today_max = today['data']['weather'][0]['maxtempF']
+    yesterday_max = yesterday['data']['weather'][0]['maxtempF']
+
+    temperature = temp_forecast(yesterday_max, today_max)
+    precip = precip_forecast(today)
     # CSC
     if precip != None:
-        logging.info(temperature + ' and ' + precip)
-        return temperature + ' and ' + precip
+        to_return = 'today will be ' + temperature + ' and ' + precip + ' than  yesterday'
+        logging.info(to_return)
+        return to_return
     else:
-        logging.info(temperature)
-        return temperature
+        to_return = 'today will be ' + temperature + ' than  yesterday'
+        logging.info(to_return)
+        return to_return
 
 def search_location(location, address_component, param='short_name'):
     components = location['results'][0]['address_components']
@@ -194,7 +197,6 @@ class API(webapp2.RequestHandler):
         hour_offset = timezone_data['rawOffset'] / 3600
 
         if include_today: # compare today to yesterday
-            #TODO: time zone. get the time zone and get 'yesterday' based on what day it is today.
             yesterday_datetime = datetime.date.today() - datetime.timedelta(1) + datetime.timedelta(hours=hour_offset)
             url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx'+ \
                   '?key='+key+ \
@@ -203,24 +205,20 @@ class API(webapp2.RequestHandler):
                   '&date='+yesterday_datetime.strftime('%Y-%m-%d')
             yesterday = json.loads(urllib2.urlopen(url).read())
 
-            response['today'] = get_today_forecast(yesterday, today)
-            response['tonight'] = get_tonight_temp_forecast(yesterday, today)
+            response['today'] = today_forecast(yesterday, today)
+            response['tonight'] = tonight_temp_forecast(yesterday, today)
 
         if include_tomorrow: #compare tomorrow to today
-            #TODO: time zone. get the time zone and get 'yesterday' based on what day it is today.
             tomorrow_datetime = datetime.date.today() + datetime.timedelta(1) + datetime.timedelta(hours=hour_offset)
             url = 'http://api.worldweatheronline.com/free/v2/weather.ashx'+ \
                   '?key='+key+ \
                   '&format=json'+ \
                   '&q='+lat+','+lng+ \
                   '&date='+tomorrow_datetime.strftime('%Y-%m-%d')
-            self.response.write(url)
             tomorrow = json.loads(urllib2.urlopen(url).read())
-            write(tomorrow)
-            return
 
-            response['tomorrow'] = get_tomorrow_temp_forecast(today, tomorrow)
-            response['tomorrow_night'] = get_tomorrow_night_temp_forecast(today, tomorrow)
+            response['tomorrow'] = tomorrow_temp_forecast(today, tomorrow)
+            response['tomorrow_night'] = tomorrow_night_temp_forecast(today, tomorrow)
 
         #LOCATION
         url = 'https://maps.googleapis.com/maps/api/geocode/json'+ \
