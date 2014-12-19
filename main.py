@@ -37,18 +37,17 @@ def avg(weather_data, param, night=False):
 # TODO: more adjectives
 # TODO: CLEAR SKIES AND CLOUDS
 # TODO: something about std dev (lambda) of rainfall, is it steady, inconsistent, big storm?
-def precip_forecast(day_data):
+def precip_forecast(total_precip):
     # (hourly avg over 12 hrs) * 12 = total
     # total precipitation (in MM? doesnt seem right.) for today
-    total_precip = avg(day_data, 'precipMM') * 12.0
 
     if total_precip == 0:
         return None
     if total_precip < 1.0:
         return random.choice(['drizzles', 'sprikles'])
-    elif total_precip < 5.0:
+    elif 1.0 < total_precip < 5.0:
         return random.choice(['a little precipitation', 'some showers'])
-    elif total_precip < 20.0: 
+    elif 5.0 < total_precip < 20.0: 
         return random.choice(['steady rain', 'lots of rain'])
     else:
         return 'lots of rain'
@@ -58,21 +57,23 @@ def precip_forecast(day_data):
 def hot_or_cold_adj(temp_diff, avg_temp):
     if temp_diff == 0:
         return ''
+
     if temp_diff < 0:
         if avg_temp < 30:
             return 'colder'
-        elif avg_temp < 50:
+        elif 30 < avg_temp < 60:
             return 'chillier'
-        elif avg_temp < 70:
+        elif 60 < avg_temp < 70:
             return 'less warm'
         else:
             return 'less hot'
+
     if temp_diff > 0:
         if avg_temp < 30:
             return 'less cold'
-        elif avg_temp < 50:
+        elif 30 < avg_temp < 60:
             return 'less chilly'
-        elif avg_temp < 70:
+        elif 60 < avg_temp < 70:
             return 'warmer'
         else:
             return 'hotter'
@@ -88,7 +89,7 @@ def temp_forecast(temp_before, temp_after):
     # begin CSC
     if temp_diff < 3:
         adj = random.choice(['a little', 'a bit', 'slightly'])
-    elif temp_diff < 7:
+    elif 3 < temp_diff < 7:
         return hot_or_cold # i don't think we need an adjective in this case
     else:
         adj = random.choice(['noticeably', 'much', 'a lot', 'quite a bit', 'considerably', 'appreciably'])
@@ -99,9 +100,11 @@ def temp_forecast(temp_before, temp_after):
 def today_forecast(yesterday, today):
     today_max = float(today['data']['weather'][0]['maxtempF'])
     yesterday_max = float(yesterday['data']['weather'][0]['maxtempF'])
-
     temperature = temp_forecast(yesterday_max, today_max)
-    precip = precip_forecast(today)
+
+    total_precip = avg(today, 'precipMM') * 12.0
+    precip = precip_forecast(total_precip)
+
     if precip:
         to_return = 'today will be ' + temperature  + ' than yesterday with ' + precip
     else:
@@ -115,9 +118,11 @@ def today_forecast(yesterday, today):
 def tomorrow_forecast(today, tomorrow):
     today_max = float(today['data']['weather'][0]['maxtempF'])
     tomorrow_max = float(tomorrow['data']['weather'][0]['maxtempF'])
-
     temperature = temp_forecast(today_max, tomorrow_max)
-    precip = precip_forecast(tomorrow)
+
+    total_precip = avg(tomorrow, 'precipMM') * 12.0
+    precip = precip_forecast(total_precip)
+
     if precip:
         to_return = 'tomorrow will be ' + temperature  + ' than today and ' + precip
     else:

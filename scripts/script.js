@@ -29,7 +29,7 @@ $( document ).ready(function() {
 });
 
 function get_success(data) {
-    console.log("hey I got data");
+    console.log("hey I got this data: " + data);
     var weather_dat = JSON.parse(data);
     weather = weather_dat.today;
     place = weather_dat.city + ", " + weather_dat.state
