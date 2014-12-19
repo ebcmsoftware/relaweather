@@ -89,7 +89,7 @@ def temp_forecast(temp_before, temp_after):
     if temp_diff < 3:
         adj = random.choice(['a little', 'a bit', 'slightly'])
     elif temp_diff < 7:
-        adj = '' # i don't think we need an adjective in this case
+        return hot_or_cold # i don't think we need an adjective in this case
     else:
         adj = random.choice(['noticeably', 'much', 'a lot', 'quite a bit', 'considerably', 'appreciably'])
     return adj + ' ' + hot_or_cold
@@ -180,7 +180,7 @@ class API(webapp2.RequestHandler):
             response['fault'] = 'yours'
             write(response)
             return
-####End input checking####
+# End input checking
 
         if not lat or not lng:
             url = 'https://maps.googleapis.com/maps/api/geocode/json?address='+zipcode+'&key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'
