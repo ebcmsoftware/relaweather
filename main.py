@@ -28,59 +28,47 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     # 7: 11pm-2am
 
 # hourly average for param
-def get_avg(data, param, night=False):
+def get_avg(weather_data, param, night=False):
     avg = 0.0
     if night:
         for i in range(4): #4*3 = 12. things are measured in 3hr periods, 12hrs is half the day.
-            avg += float(data['data']['weather'][0]['hourly'][(i+5) % 8][param]) # 5, 6, 7, 0
+            avg += float(weather_data['data']['weather'][0]['hourly'][(i+5) % 8][param]) # 5, 6, 7, 0
         avg /= 12.0
         return avg
     else:
         for i in range(4): #4*3 = 12. things are measured in 3hr periods, 12hrs is half the day.
-            avg += float(data['data']['weather'][0]['hourly'][i+1][param]) # 1, 2, 3, 4
+            avg += float(weather_data['data']['weather'][0]['hourly'][i+1][param]) # 1, 2, 3, 4
         avg /= 12.0
         return avg
 
-#TODO: find if rain or snow. somehow. be smart
-def get_tomorrow_precip(tomorrow):
-    tomorrow_precip = get_avg(tomorrow, 'precipMM') * 12.0 # (hourly avg over 12 hrs) * 12 = total
-    return tomorrow_precip
-
-def get_tomorrow_night_precip(tomorrow):
-    tomorrow_night_precip = get_avg(tomorrow, 'precipMM', night=True) * 12.0
-    return tomorrow_night_precip
-
-def get_tomorrow_night_temp(today, tomorrow):
+def get_tomorrow_night_temp_forecast(today, tomorrow):
     today_min = today['data']['weather'][0]['mintempF']
     tomorrow_min = tomorrow['data']['weather'][0]['mintempF']
     return '(today_min - tomorrow_min): %f' %(float(today_min) - float(tomorrow_min))
 
-def get_tomorrow_temp(today, tomorrow):
+def get_tomorrow_temp_forecast(today, tomorrow):
     today_max = today['data']['weather'][0]['maxtempF']
     tomorrow_max = tomorrow['data']['weather'][0]['maxtempF']
     return '(today_max - tomorrow_max): %f' %(float(today_max) - float(tomorrow_max))
 
-
-def get_tonight_precip(today):
-    today_precip = get_avg(today, 'precipMM', night=True) * 12.0 
-    return today_precip
-
-def get_tonight_temp(yesterday, today):
+def get_tonight_temp_forecast(yesterday, today):
     today_min = today['data']['weather'][0]['mintempF']
     yesterday_min = yesterday['data']['weather'][0]['mintempF']
     return '(today_min - yesterday_min): %f' %(float(today_min) - float(yesterday_min))
 
-def get_today_precip(today):
-    today_precip = get_avg(today, 'precipMM') * 12.0 # (hourly avg over 12 hrs) * 12 = total
-    #TODO: find thresholds. find rain or snow or hail or...
+#generalized precip getter
+#TODO: find if rain or snow. somehow. be smart. use ['weatherDesc']['value']?
+#TODO: thresholldddssssssss
+def get_precip(weather_data, night=False):
+    total_precip = get_avg(weather_data, 'precipMM', night) * 12.0 # (hourly avg over 12 hrs) * 12 = total
     #total precipitation (in MM? doesnt seem right.) for today
-    if today_precip == 0:
+    if total_precip == 0:
         return None
-    if today_precip < 0.5:
+    if total_precip < 0.5:
         return random.choice(['occasionally drizzly', 'with scattered rain'])
-    elif today_precip < 5.0:
+    elif total_precip < 5.0:
         return random.choice(['with a little precipitation', 'with slight rain', 'with some showers'])
-    elif today_precip < 20.0: 
+    elif total_precip < 20.0: 
         return 'rainy'
     else:
         return 'v. rainy'
@@ -111,7 +99,7 @@ def get_today_temp_forecast(yesterday, today):
 
 def get_today_forecast(yesterday, today):
     temperature = get_today_temp_forecast(yesterday, today)
-    precip = get_today_precip(today)
+    precip = get_precip(today)
     # CSC
     if precip != None:
         logging.info(temperature + ' and ' + precip)
@@ -199,6 +187,7 @@ class API(webapp2.RequestHandler):
         today = json.loads(urllib2.urlopen(url).read())
 
         if include_today: # compare today to yesterday
+            #TODO: time zone. get the time zone and get 'yesterday' based on what day it is today.
             yesterday_datetime = datetime.date.today() - datetime.timedelta(1)
             url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx'+ \
                   '?key='+key+ \
@@ -208,19 +197,23 @@ class API(webapp2.RequestHandler):
             yesterday = json.loads(urllib2.urlopen(url).read())
 
             response['today'] = get_today_forecast(yesterday, today)
-            response['tonight'] = get_tonight_temp(yesterday, today)
+            response['tonight'] = get_tonight_temp_forecast(yesterday, today)
 
         if include_tomorrow: #compare tomorrow to today
+            #TODO: time zone. get the time zone and get 'yesterday' based on what day it is today.
             tomorrow_datetime = datetime.date.today() + datetime.timedelta(1)
             url = 'http://api.worldweatheronline.com/free/v2/weather.ashx'+ \
                   '?key='+key+ \
                   '&format=json'+ \
                   '&q='+lat+','+lng+ \
                   '&date='+tomorrow_datetime.strftime('%Y-%m-%d')
+            self.response.write(url)
             tomorrow = json.loads(urllib2.urlopen(url).read())
+            write(tomorrow)
+            return
 
-            response['tomorrow'] = get_tomorrow_temp(today, tomorrow)
-            response['tomorrow_night'] = get_tomorrow_night_temp(today, tomorrow)
+            response['tomorrow'] = get_tomorrow_temp_forecast(today, tomorrow)
+            response['tomorrow_night'] = get_tomorrow_night_temp_forecast(today, tomorrow)
 
         #LOCATION
         url = 'https://maps.googleapis.com/maps/api/geocode/json'+ \
