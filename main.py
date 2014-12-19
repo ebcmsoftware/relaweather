@@ -60,13 +60,13 @@ def tonight_temp_forecast(yesterday, today):
 #generalized precip getter
 #TODO: find if rain or snow. somehow. be smart. use ['weatherDesc']['value']?
 #TODO: thresholldddssssssss
-def precip_forecast(weather_data, night=False):
-    total_precip = avg(weather_data, 'precipMM', night) * 12.0 # (hourly avg over 12 hrs) * 12 = total
-    #total precipitation (in MM? doesnt seem right.) for today
+def precip_forecast(total_precip):
+    # (hourly avg over 12 hrs) * 12 = total
+    # total precipitation (in MM? doesnt seem right.) for today
     if total_precip == 0:
         return None
-    if total_precip < 0.5:
-        return random.choice(['occasionally drizzly', 'with scattered rain'])
+    if total_precip < 1:
+        return random.choice(['occasionally drizzly', 'sprikles'])
     elif total_precip < 5.0:
         return random.choice(['with a little precipitation', 'with slight rain', 'with some showers'])
     elif total_precip < 20.0: 
@@ -111,6 +111,17 @@ def today_forecast(yesterday, today):
         to_return = 'today will be ' + temperature + ' than  yesterday'
         logging.info(to_return)
         return to_return
+
+def tomorrow_forecast(today, tomorrow):
+    temperature = get_temp_forecast(yesterday, today)
+    precip = precip_forecast(tomorrow)
+    # CSC
+    if precip != None:
+        logging.info(temperature + ' and ' + precip)
+        return temperature + ' and ' + precip
+    else:
+        logging.info(temperature)
+        return temperature
 
 def search_location(location, address_component, param='short_name'):
     components = location['results'][0]['address_components']
