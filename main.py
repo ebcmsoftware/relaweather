@@ -42,21 +42,6 @@ def avg(weather_data, param, night=False):
         avg /= 12.0
         return avg
 
-def tomorrow_night_temp_forecast(today, tomorrow):
-    today_min = today['data']['weather'][0]['mintempF']
-    tomorrow_min = tomorrow['data']['weather'][0]['mintempF']
-    return '(today_min - tomorrow_min): %f' %(float(today_min) - float(tomorrow_min))
-
-def tomorrow_temp_forecast(today, tomorrow):
-    today_max = today['data']['weather'][0]['maxtempF']
-    tomorrow_max = tomorrow['data']['weather'][0]['maxtempF']
-    return '(today_max - tomorrow_max): %f' %(float(today_max) - float(tomorrow_max))
-
-def tonight_temp_forecast(yesterday, today):
-    today_min = today['data']['weather'][0]['mintempF']
-    yesterday_min = yesterday['data']['weather'][0]['mintempF']
-    return '(today_min - yesterday_min): %f' %(float(today_min) - float(yesterday_min))
-
 #generalized precip getter
 #TODO: find if rain or snow. somehow. be smart. use ['weatherDesc']['value']?
 #TODO: thresholldddssssssss
@@ -74,7 +59,6 @@ def precip_forecast(total_precip):
     else:
         return 'v. rainy'
 
-#def today_temp_forecast(yesterday, today):
 def temp_forecast(temp_before, temp_after):
     today_diff = float(temp_after) - float(temp_before)
     hot_or_cold = ''
@@ -104,11 +88,11 @@ def today_forecast(yesterday, today):
     precip = precip_forecast(today)
     # CSC
     if precip != None:
-        to_return = 'today will be ' + temperature + ' and ' + precip + ' than  yesterday'
+        to_return = 'today will be ' + temperature + ' and ' + precip + ' than yesterday'
         logging.info(to_return)
         return to_return
     else:
-        to_return = 'today will be ' + temperature + ' than  yesterday'
+        to_return = 'today will be ' + temperature + ' than yesterday'
         logging.info(to_return)
         return to_return
 
