@@ -1,4 +1,7 @@
-#big thx to worldweatheronline api
+# big thx to worldweatheronline api
+# NOTE: ALL TEMPERATURES FARENHEIGHT, 
+# ALL PRECIPITATION VALUES IN MILLIMETERS
+# TODO: Day/night modularity and things
 
 import os
 import json
@@ -10,25 +13,12 @@ import urllib2
 import webapp2
 import datetime
 
-
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
     extensions=['jinja2.ext.autoescape'],
     autoescape=True)
 
-
-#TODO: VERIFY THIS VERIFY THIS VERIFY THIS PLEEEAAASSSEEEE**************************************************** XXX
-# tri-hourly times are 
-    # 0: 2am-5am
-    # 1: 5am-8am
-    # 2: 8am-11am
-    # 3: 11am-2pm
-    # 4: 2pm-5pm
-    # 5: 5pm-8pm
-    # 6: 8pm-11pm
-    # 7: 11pm-2am
-
-# hourly average for param
+# hourly average for param (used for precipitation but modularity is cool i guess)
 def avg(weather_data, param, night=False):
     avg = 0.0
     if night:
@@ -42,40 +32,52 @@ def avg(weather_data, param, night=False):
         avg /= 12.0
         return avg
 
-#generalized precip getter
-#TODO: find if rain or snow. somehow. be smart. use ['weatherDesc']['value']?
-#TODO: thresholldddssssssss
-def precip_forecast(total_precip):
+# generalized precipitation forecast, includes if skies are clear
+# TODO: find if rain or snow. somehow. be smart. use ['weatherDesc']['value']?
+# TODO: more adjectives
+# TODO: CLEAR SKIES AND CLOUDS
+# TODO: something about std dev (lambda) of rainfall, is it steady, inconsistent, big storm?
+def precip_forecast(day_data):
     # (hourly avg over 12 hrs) * 12 = total
     # total precipitation (in MM? doesnt seem right.) for today
+    total_precip = avg(day_data, 'precipMM') * 12.0
+
     if total_precip == 0:
         return None
-    if total_precip < 1:
-        return random.choice(['occasionally drizzly', 'sprikles'])
+    if total_precip < 1.0:
+        return random.choice(['drizzles', 'sprikles'])
     elif total_precip < 5.0:
-        return random.choice(['with a little precipitation', 'with slight rain', 'with some showers'])
+        return random.choice('a little precipitation', 'some showers'])
     elif total_precip < 20.0: 
-        return 'rainy'
+        return random.choice(['steady rain', 'lots of rain'])
     else:
-        return 'v. rainy'
+        return 'lots of rain'
 
-#temp_diff here cannot be 0
+# returns an adjective or little phrase about the temperature difference
+# given the average temp so that it can use the right words
 def hot_or_cold_adj(temp_diff, avg_temp):
+    if temp_diff == 0:
+        return ''
     if temp_diff < 0:
-        if avg_temp < 32:
+        if avg_temp < 30:
             return 'colder'
         elif avg_temp < 50:
             return 'chillier'
+        elif avg_temp < 70:
+            return 'less warm'
         else:
             return 'less hot'
     if temp_diff > 0:
-        if avg_temp < 32:
+        if avg_temp < 30:
             return 'less cold'
         elif avg_temp < 50:
             return 'less chilly'
+        elif avg_temp < 70:
+            return 'warmer'
         else:
             return 'hotter'
 
+# returns a string describing the difference betweetn temp_before and temp_after
 def temp_forecast(temp_before, temp_after):
     temp_diff = temp_after - temp_before
     hot_or_cold = ''
@@ -86,40 +88,35 @@ def temp_forecast(temp_before, temp_after):
     # begin CSC
     if temp_diff < 3:
         adj = random.choice(['a little', 'a bit', 'slightly'])
-    elif temp_diff < 6:
-        adj = random.choice(['', 'noticeably'])
-        if adj == '':
-            return hot_or_cold
+    elif temp_diff < 7:
+        adj = '' # i don't think we need an adjective in this case
     else:
-        adj = random.choice(['a fuck ton'])
+        adj = random.choice(['noticeably', 'much', 'a lot', 'quite a bit', 'considerably', 'appreciably'])
     return adj + ' ' + hot_or_cold
 
+# returns a string with today's forecast given json objects from WWO
+# with weather for yesterday and today
 def today_forecast(yesterday, today):
     today_max = float(today['data']['weather'][0]['maxtempF'])
     yesterday_max = float(yesterday['data']['weather'][0]['maxtempF'])
 
     temperature = temp_forecast(yesterday_max, today_max)
     precip = precip_forecast(today)
-    # CSC
-    if precip != None:
-        to_return = 'today will be ' + temperature + ' and ' + precip + ' than yesterday'
-        logging.info(to_return)
-        return to_return
-    else:
-        to_return = 'today will be ' + temperature + ' than yesterday'
-        logging.info(to_return)
-        return to_return
+    to_return = 'today will be ' + temperature  + ' than yesterday with ' + precip
+    logging.info(to_return)
+    return to_return
 
+# returns a string with tomorrow's forecast given json objects from WWO
+# with weather for today and tomorrow
 def tomorrow_forecast(today, tomorrow):
-    temperature = get_temp_forecast(yesterday, today)
+    today_max = float(today['data']['weather'][0]['maxtempF'])
+    tomorrow_max = float(tomorrow['data']['weather'][0]['maxtempF'])
+
+    temperature = temp_forecast(today_max, tomorrow_max)
     precip = precip_forecast(tomorrow)
-    # CSC
-    if precip != None:
-        logging.info(temperature + ' and ' + precip)
-        return temperature + ' and ' + precip
-    else:
-        logging.info(temperature)
-        return temperature
+    to_return = 'tomorrow will be ' + temperature  + ' than today and ' + precip
+    logging.info(to_return)
+    return to_return
 
 def search_location(location, address_component, param='short_name'):
     components = location['results'][0]['address_components']
