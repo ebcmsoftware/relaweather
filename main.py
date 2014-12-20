@@ -18,6 +18,8 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     extensions=['jinja2.ext.autoescape'],
     autoescape=True)
 
+################################################################################
+
 # hourly average for param (used for precipitation but modularity is cool i guess)
 # TODO: found a problem with the data. Averaging "night" doesn't guaranteed work.
 #     -Counter-example: http://api.worldweatheronline.com/free/v2/weather.ashx?key=71f6bcee6c068c552bf84460d5409&format=json&q=99501&date=2014-12-21 
@@ -36,12 +38,14 @@ def avg(weather_data, param, night):
         avg /= 12.0
         return avg
 
+
 # TODO: min temp vs getting "tonight's" low temp?!
 def get_temp(time, night):
-    if night == 'low':
+    if night:
         return float(time['data']['weather'][0]['mintempF'])
     else:
         return float(time['data']['weather'][0]['maxtempF'])
+
 
 def cloud_forecast(cloud_percent):
     if cloud_percent < 25:
@@ -53,6 +57,7 @@ def cloud_forecast(cloud_percent):
     else: 
         return random.choice(['overcast', 'cloudy skies'])
 
+
 def rain_forecast(total_precip):
     if total_precip <= 8:
         return random.choice(['some', 'a few']) + ' ' + random.choice(['drizzles', 'sprinkles'])
@@ -62,6 +67,7 @@ def rain_forecast(total_precip):
         return random.choice(['steady rain', 'quite a bit of rain'])
     else:
         return 'lots of rain'
+
 
 def snow_forecast(total_precip):
     if total_precip <= 25: # inch of snow
@@ -73,6 +79,7 @@ def snow_forecast(total_precip):
     else:
         return 'lots of snow'
 
+
 # generalized precipitation forecast, includes if skies are clear
 # TODO: find if rain or snow. somehow. be smart. use ['weatherDesc']['value']?
 # TODO: something about std dev (lambda) of rainfall, is it steady, inconsistent, big storm?
@@ -83,6 +90,7 @@ def precip_forecast(total_precip, cloud_percent, temp):
         return rain_forecast(total_precip)
     else: 
         return snow_forecast(total_precip)
+
 
 # returns an adjective or little phrase about the temperature difference
 # given the average temp so that it can use the right words
@@ -113,6 +121,7 @@ def hot_or_cold_adj(temp_diff, avg_temp):
         if avg_temp > 80:
             return 'hotter'
 
+
 # returns a string describing the difference between temp_before and temp_after
 def temp_forecast(temp_before, temp_after):
     temp_diff = temp_after - temp_before
@@ -130,22 +139,19 @@ def temp_forecast(temp_before, temp_after):
         adj = random.choice(['noticeably', 'much', 'a lot', 'quite a bit', 'considerably', 'appreciably'])
     return adj + ' ' + hot_or_cold + ' than'
 
+
 def get_forecast_data(last, current, night):
-    if night:
-        last_temp = get_temp(last, 'low')
-        now_temp = get_temp(current, 'low')
-        total_precip = avg(current, 'precipMM', night=True) * 12.0
-        cloud_percent = avg(current, 'cloudcover', night=True)
-    else: 
-        last_temp = get_temp(last, 'high')
-        now_temp = get_temp(current, 'high')
-        total_precip= avg(current, 'precipMM', night=False) * 12.0
-        cloud_percent = avg(current, 'cloudcover', night=False)
+    last_temp = get_temp(last, night)
+    now_temp = get_temp(current, night)
+
+    total_precip = avg(current, 'precipMM', night) * 12.0
+    cloud_percent = avg(current, 'cloudcover', night)
 
     temperature = temp_forecast(last_temp, now_temp)
     precip = precip_forecast(total_precip, cloud_percent, now_temp)
 
     return (temperature, precip)
+
 
 def forecast_day(yesterday, today, tomorrow, verb):
     (tempdata, precipdata) = get_forecast_data(yesterday, today, False)
@@ -159,17 +165,19 @@ def forecast_day(yesterday, today, tomorrow, verb):
 
     return [forecast_1, forecast_2, forecast_3]
 
+
 def forecast_night(yesterday, today, tomorrow, verb):
     (tempdata, precipdata) = get_forecast_data(yesterday, today, True)
     forecast_1 = 'tonight ' + verb + ' ' + tempdata + ' last night with ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(yesterday, today, False)
-    forecast_2 = 'tomorrow will be ' + tempdata + ' today was with ' + precipdata #todo: yesterday?!
+    forecast_2 = 'tomorrow will be ' + tempdata + ' today was with ' + precipdata #TODO: yesterday?!
 
     (tempdata, precipdata) = get_forecast_data(today, tomorrow, True)
     forecast_3 = 'tomorrow night will be ' + tempdata + ' tonight with ' + precipdata
 
     return [forecast_1, forecast_2, forecast_3]
+
 
 def forecast(yesterday, today, tomorrow, local_datetime):
     hour = (local_datetime - local_datetime.replace(hour=0,minute=0,second=0)).seconds / 3600.0
@@ -183,11 +191,14 @@ def forecast(yesterday, today, tomorrow, local_datetime):
     else: # 7pm to 4am
         return forecast_night(yesterday, today, tomorrow, 'is') + [4]
 
+
 def search_location(location, address_component, param='short_name'):
     components = location['results'][0]['address_components']
     for component in components:
         if address_component in component['types']:
             return component[param]
+
+################################################################################
 
 class API(webapp2.RequestHandler):
     def get(self):
