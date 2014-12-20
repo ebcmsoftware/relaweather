@@ -100,6 +100,75 @@ def temp_forecast(temp_before, temp_after):
         adj = random.choice(['noticeably', 'much', 'a lot', 'quite a bit', 'considerably', 'appreciably'])
     return adj + ' ' + hot_or_cold + ' than'
 
+
+#5am-5pm - same thing just "is" rather than "will be"
+def forecast_day(yesterday, today, tomorrow, verb):
+    forecast_1 = forecast_2 = forecast_3 = ''
+    today_max = float(today['data']['weather'][0]['maxtempF'])
+    ###########################################################################
+    # FORECAST 1 - "today is/will be" "yesterday"
+    yesterday_max = float(yesterday['data']['weather'][0]['maxtempF'])
+    temperature = temp_forecast(yesterday_max, today_max)
+
+    total_precip= avg(today, 'precipMM') * 12.0
+    precip = precip_forecast(total_precip)
+
+    forecast_1 = 'today '+verb+' '+temperature+' yesterday'
+    if precip:
+        forecast_1 += ' with ' + precip
+    ###########################################################################
+    # FORECAST 2 - "tonight will be" "last night"
+    # TODO <- night is very TODO
+    pass
+    ###########################################################################
+    # FORECAST 3 - "tomorrow will be" "today"
+    tomorrow_max = float(tomorrow['data']['weather'][0]['maxtempF'])
+    temperature = temp_forecast(today_max, tomorrow_max)
+
+    total_precip = avg(tomorrow, 'precipMM') * 12.0
+    precip = precip_forecast(total_precip)
+
+    forecast_3 = 'tomorrow will be '+temperature+' today'
+    if precip:
+        forecast_3 += ' with '+precip
+    ###########################################################################
+    return (forecast_1, forecast_2, forecast_3)
+
+
+#5pm-5am
+def forecast_night(yesterday, today, tomorrow):
+    forecast_1 = forecast_2 = forecast_3 = ''
+    yesterday_max = float(yesterday['data']['weather'][0]['maxtempF'])
+    ###########################################################################
+    # FORECAST 1 - "tonight is" "last night"
+    ###########################################################################
+    # FORECAST 2 - "tomorrow will be" "yesterday"
+    today_max = float(today['data']['weather'][0]['maxtempF'])
+    temperature = temp_forecast(yesterday_max, today_max)
+
+    total_precip = avg(today, 'precipMM') * 12.0
+    precip = precip_forecast(total_precip)
+
+    forecast_2 = 'tomorrow will be '+temperature+' yesterday'
+    if precip:
+        forecast_2 += ' with '+precip
+    ###########################################################################
+    # FORECAST 3 - "tomorrow night will be" "tonight"
+    ###########################################################################
+    return (forecast_1, forecast_2, forecast_3)
+
+
+def forecast(yesterday, today, tomorrow, local_datetime):
+    hour = (today_datetime - today_datetime.replace(hour=0,minute=0,second=0)).seconds / 3600.0
+
+    if 5.0 < hour <= 11.0: # morning
+        return forecast_day(yesterday, today, tomorrow, 'will be')
+    elif 11.0 < hour <= 17.0: # day
+        return forecast_day(yesterday, today, tomorrow, 'is')
+    else: # night
+        return ('oh', 'oh2', 'oh3') #TODO remove this after implementing forecast
+        return forecast_night(yesterday, today, tomorrow)
+
 # returns a string with today's forecast given json objects from WWO
 # with weather for yesterday and today
 def today_forecast(yesterday, today, today_datetime):
@@ -110,6 +179,7 @@ def today_forecast(yesterday, today, today_datetime):
     total_precip = avg(today, 'precipMM') * 12.0
     precip = precip_forecast(total_precip)
 
+    # TODO: what do we do if they access at 12:01am
     hour = (today_datetime - today_datetime.replace(hour=0,minute=0,second=0)).seconds / 3600.0
     if hour <= 11:
         verb = 'will be'

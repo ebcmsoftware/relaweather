@@ -29,6 +29,7 @@ function use_geolocation() {
 }
 
 $(document).ready(function() {
+    $('#switch_mode').hide();
     $('#location_name').hide();
     $('#location_form').hide();
     $('#change_location').hide();
@@ -92,5 +93,6 @@ function show_weather(weather_string, place_string){
     $('#forecast').show();
     $('#location_form').hide();
     $('#change_location').show();
+    $('#switch_mode').show();
 }
 
