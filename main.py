@@ -136,7 +136,7 @@ def forecast_day(yesterday, today, tomorrow, verb):
 
 
 #5pm-5am
-def forecast_night(yesterday, today, tomorrow):
+def forecast_night(yesterday, today, tomorrow, verb):
     forecast_1 = forecast_2 = forecast_3 = ''
     yesterday_max = float(yesterday['data']['weather'][0]['maxtempF'])
     ###########################################################################
@@ -165,9 +165,12 @@ def forecast(yesterday, today, tomorrow, local_datetime):
         return forecast_day(yesterday, today, tomorrow, 'will be')
     elif 11.0 < hour <= 17.0: # day
         return forecast_day(yesterday, today, tomorrow, 'is')
+    elif 17.0 < hour <= 23.0: # day
+        return ('oh', 'oh2', 'oh3') #TODO remove this after implementing forecast
+        return forecast_night(yesterday, today, tomorrow, 'will be')
     else: # night
         return ('oh', 'oh2', 'oh3') #TODO remove this after implementing forecast
-        return forecast_night(yesterday, today, tomorrow)
+        return forecast_night(yesterday, today, tomorrow, 'is')
 
 # returns a string with today's forecast given json objects from WWO
 # with weather for yesterday and today
