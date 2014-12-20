@@ -272,7 +272,7 @@ class API(webapp2.RequestHandler):
         tomorrow = json.loads(urllib2.urlopen(url).read())
 
         minutes = (local_datetime - local_datetime.replace(hour=0,minute=0,second=0)).seconds / 60
-        random.seed(minutes) #change random answers every minute. so refreshing doesnt change answers that that frequently. could also divide by n to change every n minutes.
+        random.seed(minutes / 10) #change random answers every 10 minutes. so refreshing doesnt change answers that that frequently. could also divide by n to change every n minutes.
         [forecast_1, forecast_2, forecast_3, data_type] = forecast(yesterday, today, tomorrow, local_datetime)
 
         response['current'] = forecast_1
