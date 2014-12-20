@@ -19,6 +19,10 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape=True)
 
 # hourly average for param (used for precipitation but modularity is cool i guess)
+# TODO: found a problem with the data. Averaging "night" doesn't guaranteed work.
+#     -Counter-example: http://api.worldweatheronline.com/free/v2/weather.ashx?key=71f6bcee6c068c552bf84460d5409&format=json&q=99501&date=2014-12-21 
+#     -http://i.imgur.com/26rltFm.png 
+#     -I think only general solution to this is looping through each weather_data point and only adding the ones that are between the relevant time (i.e. 6am-6pm)
 def avg(weather_data, param, night):
     avg = 0.0
     if night:
@@ -32,9 +36,9 @@ def avg(weather_data, param, night):
         avg /= 12.0
         return avg
 
-# TODO: min temp vs getting tonight's low temp?!
+# TODO: min temp vs getting "tonight's" low temp?!
 def get_temp(time, night):
-    if night:
+    if night == 'low':
         return float(time['data']['weather'][0]['mintempF'])
     else:
         return float(time['data']['weather'][0]['maxtempF'])
@@ -89,24 +93,24 @@ def hot_or_cold_adj(temp_diff, avg_temp):
     if temp_diff < 0:
         if avg_temp <= 30:
             return 'colder'
-        if avg_temp <= 50:
+        if 30 < avg_temp <= 50: # joined inequalities for readability
             return 'chillier'
-        if avg_temp <= 60:
+        if 50 < avg_temp <= 60:
             return 'cooler'
-        if avg_temp <= 80:
+        if 60 < avg_temp <= 80:
             return 'less warm'
-        else:
+        if avg_temp > 80:
             return 'less hot'
     if temp_diff > 0:
         if avg_temp < 30:
             return 'less cold'
-        if avg_temp <= 50:
+        if 30 < avg_temp <= 60:
             return 'less chilly'
-        if avg_temp <= 60:
-            return 'less cool'
-        if avg_temp <= 80:
+        #if 50 < avg_temp <= 60: #commented it out. "tomorrow will be much less cool than today" just doesn't sound right to me. feel free to add it back in or tweak.
+        #    return 'less cool'
+        if 60 < avg_temp <= 80:
             return 'warmer'
-        else:
+        if avg_temp > 80:
             return 'hotter'
 
 # returns a string describing the difference between temp_before and temp_after
@@ -130,13 +134,13 @@ def get_forecast_data(last, current, night):
     if night:
         last_temp = get_temp(last, 'low')
         now_temp = get_temp(current, 'low')
-        total_precip = avg(current, 'precipMM', True) * 12.0
-        cloud_percent = avg(current, 'cloudcover', True)
+        total_precip = avg(current, 'precipMM', night=True) * 12.0
+        cloud_percent = avg(current, 'cloudcover', night=True)
     else: 
         last_temp = get_temp(last, 'high')
         now_temp = get_temp(current, 'high')
-        total_precip= avg(current, 'precipMM', False) * 12.0
-        cloud_percent = avg(current, 'cloudcover', False)
+        total_precip= avg(current, 'precipMM', night=False) * 12.0
+        cloud_percent = avg(current, 'cloudcover', night=False)
 
     temperature = temp_forecast(last_temp, now_temp)
     precip = precip_forecast(total_precip, cloud_percent, now_temp)
