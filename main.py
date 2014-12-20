@@ -101,7 +101,7 @@ def temp_forecast(temp_before, temp_after):
     return adj + ' ' + hot_or_cold + ' than'
 
 
-#5am-5pm - same thing just "is" rather than "will be"
+# 5am-5pm - same thing just "is" rather than "will be"
 def forecast_day(yesterday, today, tomorrow, verb):
     forecast_1 = forecast_2 = forecast_3 = ''
     today_max = float(today['data']['weather'][0]['maxtempF'])
@@ -135,7 +135,7 @@ def forecast_day(yesterday, today, tomorrow, verb):
     return (forecast_1, forecast_2, forecast_3)
 
 
-#5pm-5am
+# 5pm-5am
 def forecast_night(yesterday, today, tomorrow, verb):
     forecast_1 = forecast_2 = forecast_3 = ''
     yesterday_max = float(yesterday['data']['weather'][0]['maxtempF'])
@@ -163,7 +163,7 @@ def forecast(yesterday, today, tomorrow, local_datetime):
 
     if 4.0 < hour <= 7.0: # morning
         return forecast_day(yesterday, today, tomorrow, 'will be')
-    elif True or 7.0 < hour <= 16.0: # day
+    elif 7.0 < hour <= 16.0: # day
         return forecast_day(yesterday, today, tomorrow, 'is')
     elif 16.0 < hour <= 20.0: # day
         return ('oh', 'oh2', 'oh3') #TODO remove this after implementing forecast
