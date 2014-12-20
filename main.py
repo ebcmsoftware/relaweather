@@ -307,4 +307,3 @@ app = webapp2.WSGIApplication([
     ('/api', API),
     ('/', MainHandler)
 ], debug=True)
-
