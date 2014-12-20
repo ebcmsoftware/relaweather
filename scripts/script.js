@@ -36,9 +36,11 @@ $(document).ready(function() {
 });
 
 function draw_data(weather_data) {
-    var weather = mode + " <-- DEBUG";
-    weather = weather_data[mode.toLowerCase()] || '';
+    // var weather = mode + " <-- DEBUG";
+    // weather = weather_data[mode.toLowerCase()] || '';
+    weather = [weather_data['current'], weather_data['next'], weather_data['next_next']]
     place = weather_data.city + ", " + weather_data.state
+
     show_weather(weather, place);
 }
 
@@ -69,10 +71,12 @@ $('#use_geolocation').click(function() {
     }
 });
 
-function show_weather(weather_string, place_string){
+function show_weather(weather_strings, place_string){
     $('#location_name').html(place_string);
     $('#location_name').show();
-    $('#weather_desc').html(weather_string);
+    $('#weather_desc1').html(weather_strings[0]);
+    $('#weather_desc2').html(weather_strings[1]);
+    $('#weather_desc3').html(weather_strings[2]);
     $('#forecast').show();
     $('#location_form').hide();
     $('#change_location').show();
