@@ -40,24 +40,45 @@ def get_temp(time, night):
         return float(time['data']['weather'][0]['maxtempF'])
 
 def cloud_forecast(cloud_percent):
-    return 'clear skies'
+    if cloud_percent < 25:
+        return random.choice(['clear skies', 'few clouds'])
+    if cloud_percent < 75:
+        return random.choice(['partly cloudy skies', 'some clouds'])
+    if cloud_percent < 90:
+        return random.choice(['mostly cloudy skies', 'many clouds'])
+    else: 
+        return random.choice(['overcast', 'cloudy skies'])
 
-# generalized precipitation forecast, includes if skies are clear
-# TODO: find if rain or snow. somehow. be smart. use ['weatherDesc']['value']?
-# TODO: more adjectives
-# TODO: CLEAR SKIES AND CLOUDS
-# TODO: something about std dev (lambda) of rainfall, is it steady, inconsistent, big storm?
-def precip_forecast(total_precip, cloud_percent):    
-    if total_precip == 0:
-        return cloud_forecast(cloud_percent)
-    if total_precip < 1.0:
+def rain_forecast(total_precip):
+    if total_precip <= 8:
         return random.choice(['some', 'a few']) + ' ' + random.choice(['drizzles', 'sprinkles'])
-    elif 1.0 < total_precip < 5.0:
+    if total_precip <= 20:
         return random.choice(['a little precipitation', 'some showers'])
-    elif 5.0 < total_precip < 20.0: 
+    if total_precip <= 40: 
         return random.choice(['steady rain', 'quite a bit of rain'])
     else:
         return 'lots of rain'
+
+def snow_forecast(total_precip):
+    if total_precip <= 25: # inch of snow
+        return random.choice(['some', 'a few']) + ' ' + random.choice(['flurries', 'light snow showers'])
+    if total_precip <= 125: 
+        return random.choice(['a little precipitation', 'some snow showers'])
+    if total_precip <= 300: 
+        return random.choice(['steady snow', 'quite a bit of snow'])
+    else:
+        return 'lots of snow'
+
+# generalized precipitation forecast, includes if skies are clear
+# TODO: find if rain or snow. somehow. be smart. use ['weatherDesc']['value']?
+# TODO: something about std dev (lambda) of rainfall, is it steady, inconsistent, big storm?
+def precip_forecast(total_precip, cloud_percent, temp):    
+    if total_precip == 0:
+        return cloud_forecast(cloud_percent)
+    if temp >= 32: # naive snow decision
+        return rain_forecast(total_precip)
+    else: 
+        return snow_forecast(total_precip)
 
 # returns an adjective or little phrase about the temperature difference
 # given the average temp so that it can use the right words
@@ -66,24 +87,24 @@ def hot_or_cold_adj(temp_diff, avg_temp):
     if temp_diff == 0:
         return ''
     if temp_diff < 0:
-        if avg_temp < 30:
+        if avg_temp <= 30:
             return 'colder'
-        elif 30 < avg_temp <= 50:
+        if avg_temp <= 50:
             return 'chillier'
-        elif 50 < avg_temp <= 60:
+        if avg_temp <= 60:
             return 'cooler'
-        elif 60 < avg_temp <= 80:
+        if avg_temp <= 80:
             return 'less warm'
         else:
             return 'less hot'
     if temp_diff > 0:
         if avg_temp < 30:
             return 'less cold'
-        elif 30 < avg_temp <= 50:
+        if avg_temp <= 50:
             return 'less chilly'
-        elif 50 < avg_temp <= 60:
+        if avg_temp <= 60:
             return 'less cool'
-        elif 60 < avg_temp <= 80:
+        if avg_temp <= 80:
             return 'warmer'
         else:
             return 'hotter'
@@ -110,39 +131,39 @@ def get_forecast_data(last, current, night):
         last_temp = get_temp(last, 'low')
         now_temp = get_temp(current, 'low')
         total_precip = avg(current, 'precipMM', True) * 12.0
-        cloud_percent = 0
+        cloud_percent = avg(current, 'cloudcover', True)
     else: 
         last_temp = get_temp(last, 'high')
         now_temp = get_temp(current, 'high')
         total_precip= avg(current, 'precipMM', False) * 12.0
-        cloud_percent = 0
+        cloud_percent = avg(current, 'cloudcover', False)
 
     temperature = temp_forecast(last_temp, now_temp)
-    precip = precip_forecast(total_precip, cloud_percent)
+    precip = precip_forecast(total_precip, cloud_percent, now_temp)
 
     return (temperature, precip)
 
 def forecast_day(yesterday, today, tomorrow, verb):
     (tempdata, precipdata) = get_forecast_data(yesterday, today, False)
-    forecast_1 = 'today ' + verb + ' ' + tempdata + ' than yesterday with ' + precipdata
+    forecast_1 = 'today ' + verb + ' ' + tempdata + ' yesterday with ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(yesterday, today, True)
-    forecast_2 = 'tonight will be ' + tempdata + ' than last night with ' + precipdata
+    forecast_2 = 'tonight will be ' + tempdata + ' last night with ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(today, tomorrow, False)
-    forecast_3 = 'tomorrow will be ' + tempdata + ' than today with ' + precipdata
+    forecast_3 = 'tomorrow will be ' + tempdata + ' today with ' + precipdata
 
     return (forecast_1, forecast_2, forecast_3)
 
 def forecast_night(yesterday, today, tomorrow, verb):
     (tempdata, precipdata) = get_forecast_data(yesterday, today, True)
-    forecast_1 = 'tonight ' + verb + ' ' + tempdata + ' than last night with ' + precipdata
+    forecast_1 = 'tonight ' + verb + ' ' + tempdata + ' last night with ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(yesterday, today, False)
-    forecast_2 = 'tomorrow will be ' + tempdata + ' than today was with ' + precipdata #todo: yesterday?!
+    forecast_2 = 'tomorrow will be ' + tempdata + ' today was with ' + precipdata #todo: yesterday?!
 
     (tempdata, precipdata) = get_forecast_data(today, tomorrow, True)
-    forecast_3 = 'tomorrow night will be ' + tempdata + ' than tonight with ' + precipdata
+    forecast_3 = 'tomorrow night will be ' + tempdata + ' tonight with ' + precipdata
 
     return (forecast_1, forecast_2, forecast_3)
 
