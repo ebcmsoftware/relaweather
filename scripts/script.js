@@ -1,4 +1,13 @@
 //:^)
+
+weather_data = {}; //want this to be global so we can use it l9r
+mode = 'Today';
+var d = new Date();
+var hour = d.getHours();
+if (hour >= 17) {
+    switch_mode('Tomorrow'); //when to go to tonight/tomorrow night?
+}
+
 function use_geolocation() {
     var options = {
         enableHighAccuracy: true,
@@ -19,7 +28,7 @@ function use_geolocation() {
     navigator.geolocation.getCurrentPosition(success, error, options);
 }
 
-$( document ).ready(function() {
+$(document).ready(function() {
     $('#location_name').hide();
     $('#location_form').hide();
     $('#change_location').hide();
@@ -28,13 +37,32 @@ $( document ).ready(function() {
     }
 });
 
-function get_success(data) {
-    console.log("hey I got this data: " + data);
-    var weather_dat = JSON.parse(data);
-    weather = weather_dat.today;
-    place = weather_dat.city + ", " + weather_dat.state
+function draw_data(weather_data) {
+    var weather = mode + " <-- DEBUG";
+    weather = weather_data[mode.toLowerCase()] || '';
+    place = weather_data.city + ", " + weather_data.state
     show_weather(weather, place);
 }
+
+function get_success(data) {
+    console.log("hey I got this data: " + data);
+    weather_data = JSON.parse(data);
+    draw_data(weather_data);
+}
+
+function switch_mode(new_mode) {
+    if (new_mode.target) { //TODO: restructure this. i was writing this hastily
+        if (mode == 'Today')
+            new_mode = 'Tomorrow'
+        if (mode == 'Tomorrow')
+            new_mode = 'Today'
+    }
+    $('#switch_mode').html(mode + "'s forecast");
+    mode = new_mode;
+    draw_data(weather_data);
+}
+
+$('#switch_mode').click(switch_mode);
 
 $('#zip_submit').click(function() {
     var zip_code = $('#zip_box').val(); 
@@ -65,3 +93,4 @@ function show_weather(weather_string, place_string){
     $('#location_form').hide();
     $('#change_location').show();
 }
+

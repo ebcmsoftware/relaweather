@@ -44,16 +44,17 @@ def precip_forecast(total_precip):
     if total_precip == 0:
         return None
     if total_precip < 1.0:
-        return random.choice(['drizzles', 'sprikles'])
+        return random.choice(['some', 'a few']) + ' ' + random.choice(['drizzles', 'sprinkles'])
     elif 1.0 < total_precip < 5.0:
         return random.choice(['a little precipitation', 'some showers'])
     elif 5.0 < total_precip < 20.0: 
-        return random.choice(['steady rain', 'lots of rain'])
+        return random.choice(['steady rain', 'quite a bit of rain'])
     else:
         return 'lots of rain'
 
 # returns an adjective or little phrase about the temperature difference
 # given the average temp so that it can use the right words
+# TODO: do this more intelligently, based on region and maybe more criteria/randomized adjectives.
 def hot_or_cold_adj(temp_diff, avg_temp):
     if temp_diff == 0:
         return ''
@@ -61,9 +62,11 @@ def hot_or_cold_adj(temp_diff, avg_temp):
     if temp_diff < 0:
         if avg_temp < 30:
             return 'colder'
-        elif 30 < avg_temp < 60:
+        elif 30 < avg_temp <= 50:
             return 'chillier'
-        elif 60 < avg_temp < 70:
+        elif 50 < avg_temp <= 60:
+            return 'cooler'
+        elif 60 < avg_temp <= 80:
             return 'less warm'
         else:
             return 'less hot'
@@ -71,9 +74,11 @@ def hot_or_cold_adj(temp_diff, avg_temp):
     if temp_diff > 0:
         if avg_temp < 30:
             return 'less cold'
-        elif 30 < avg_temp < 60:
+        elif 30 < avg_temp <= 50:
             return 'less chilly'
-        elif 60 < avg_temp < 70:
+        elif 50 < avg_temp <= 60:
+            return 'less cool'
+        elif 60 < avg_temp <= 80:
             return 'warmer'
         else:
             return 'hotter'
@@ -88,7 +93,7 @@ def temp_forecast(temp_before, temp_after):
     temp_diff = abs(temp_diff)
 
     if temp_diff < 3:
-        adj = random.choice(['a little', 'a bit', 'slightly'])
+        adj = random.choice(['a little', 'a bit', 'slightly', 'somewhat'])
     elif 3 < temp_diff < 7:
         return hot_or_cold + ' than'
     else:
@@ -97,7 +102,7 @@ def temp_forecast(temp_before, temp_after):
 
 # returns a string with today's forecast given json objects from WWO
 # with weather for yesterday and today
-def today_forecast(yesterday, today):
+def today_forecast(yesterday, today, today_datetime):
     today_max = float(today['data']['weather'][0]['maxtempF'])
     yesterday_max = float(yesterday['data']['weather'][0]['maxtempF'])
     temperature = temp_forecast(yesterday_max, today_max)
@@ -105,7 +110,13 @@ def today_forecast(yesterday, today):
     total_precip = avg(today, 'precipMM') * 12.0
     precip = precip_forecast(total_precip)
 
-    verb = 'will be' #if past 10am, 'is', if past 5pm, 'was', etc
+    hour = (today_datetime - today_datetime.replace(hour=0,minute=0,second=0)).seconds / 3600.0
+    if hour <= 11:
+        verb = 'will be'
+    elif hour <= 17:
+        verb = 'is'
+    else:
+        verb = 'was'
     to_return = 'today ' + verb + ' ' + temperature + ' yesterday'
     if precip:
         to_return += ' with ' + precip
@@ -210,10 +221,10 @@ class API(webapp2.RequestHandler):
               '&location='+lat+','+lng
         timezone_data = json.loads(urllib2.urlopen(url).read())
         hour_offset = timezone_data['rawOffset'] / 3600
+        local_datetime = datetime.datetime.now() + datetime.timedelta(hours=hour_offset)
 
         if include_today: # compare today to yesterday
-            yesterday_datetime = (datetime.datetime.now() + datetime.timedelta(hours=hour_offset)) - datetime.timedelta(1)
-            logging.info(yesterday_datetime)
+            yesterday_datetime = local_datetime - datetime.timedelta(1)
             url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx'+ \
                   '?key='+key+ \
                   '&format=json'+ \
@@ -221,12 +232,11 @@ class API(webapp2.RequestHandler):
                   '&date='+yesterday_datetime.strftime('%Y-%m-%d')
             yesterday = json.loads(urllib2.urlopen(url).read())
 
-            response['today'] = today_forecast(yesterday, today)
+            response['today'] = today_forecast(yesterday, today, local_datetime)
             #response['tonight'] = tonight_temp_forecast(yesterday, today)
 
         if include_tomorrow: #compare tomorrow to today
-            tomorrow_datetime = (datetime.datetime.now() + datetime.timedelta(hours=hour_offset)) + datetime.timedelta(1)
-            logging.info(tomorrow_datetime)
+            tomorrow_datetime = local_datetime + datetime.timedelta(1)
             url = 'http://api.worldweatheronline.com/free/v2/weather.ashx'+ \
                   '?key='+key+ \
                   '&format=json'+ \
