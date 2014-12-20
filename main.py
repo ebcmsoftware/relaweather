@@ -98,6 +98,7 @@ def precip_forecast(total_precip, cloud_percent, temp):
 def hot_or_cold_adj(temp_diff, avg_temp):
     if temp_diff == 0:
         return ''
+
     if temp_diff < 0:
         if avg_temp <= 30:
             return 'colder'
@@ -109,6 +110,7 @@ def hot_or_cold_adj(temp_diff, avg_temp):
             return 'less warm'
         if avg_temp > 80:
             return 'less hot'
+
     if temp_diff > 0:
         if avg_temp < 30:
             return 'less cold'
@@ -269,7 +271,8 @@ class API(webapp2.RequestHandler):
         url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow_datetime.strftime('%Y-%m-%d')
         tomorrow = json.loads(urllib2.urlopen(url).read())
 
-        logging.info(forecast(yesterday, today, tomorrow, local_datetime))
+        minutes = (local_datetime - local_datetime.replace(hour=0,minute=0,second=0)).seconds / 60
+        random.seed(minutes) #change random answers every minute. so refreshing doesnt change answers that that frequently. could also divide by n to change every n minutes.
         [forecast_1, forecast_2, forecast_3, data_type] = forecast(yesterday, today, tomorrow, local_datetime)
 
         response['current'] = forecast_1
