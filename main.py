@@ -159,11 +159,11 @@ def forecast_night(yesterday, today, tomorrow, verb):
 
 
 def forecast(yesterday, today, tomorrow, local_datetime):
-    hour = (today_datetime - today_datetime.replace(hour=0,minute=0,second=0)).seconds / 3600.0
+    hour = (local_datetime - local_datetime.replace(hour=0,minute=0,second=0)).seconds / 3600.0
 
     if 4.0 < hour <= 7.0: # morning
         return forecast_day(yesterday, today, tomorrow, 'will be')
-    elif 7.0 < hour <= 16.0: # day
+    elif True or 7.0 < hour <= 16.0: # day
         return forecast_day(yesterday, today, tomorrow, 'is')
     elif 16.0 < hour <= 20.0: # day
         return ('oh', 'oh2', 'oh3') #TODO remove this after implementing forecast
@@ -172,45 +172,6 @@ def forecast(yesterday, today, tomorrow, local_datetime):
         return ('oh', 'oh2', 'oh3') #TODO remove this after implementing forecast
         return forecast_night(yesterday, today, tomorrow, 'is')
 
-# returns a string with today's forecast given json objects from WWO
-# with weather for yesterday and today
-def today_forecast(yesterday, today, today_datetime):
-    today_max = float(today['data']['weather'][0]['maxtempF'])
-    yesterday_max = float(yesterday['data']['weather'][0]['maxtempF'])
-    temperature = temp_forecast(yesterday_max, today_max)
-
-    total_precip = avg(today, 'precipMM') * 12.0
-    precip = precip_forecast(total_precip)
-
-    # TODO: what do we do if they access at 12:01am
-    hour = (today_datetime - today_datetime.replace(hour=0,minute=0,second=0)).seconds / 3600.0
-    if hour <= 11:
-        verb = 'will be'
-    elif hour <= 17:
-        verb = 'is'
-    else:
-        verb = 'was'
-    to_return = 'today ' + verb + ' ' + temperature + ' yesterday'
-    if precip:
-        to_return += ' with ' + precip
-    return to_return
-
-# returns a string with tomorrow's forecast given json objects from WWO
-# with weather for today and tomorrow
-def tomorrow_forecast(today, tomorrow):
-    today_max = float(today['data']['weather'][0]['maxtempF'])
-    tomorrow_max = float(tomorrow['data']['weather'][0]['maxtempF'])
-    temperature = temp_forecast(today_max, tomorrow_max)
-
-    total_precip = avg(tomorrow, 'precipMM') * 12.0
-    precip = precip_forecast(total_precip)
-
-    verb = 'will be'
-    to_return = 'tomorrow ' + verb + ' ' + temperature + ' today'
-    if precip:
-        to_return += ' with ' + precip
-    return to_return
-
 def search_location(location, address_component, param='short_name'):
     components = location['results'][0]['address_components']
     for component in components:
@@ -218,12 +179,7 @@ def search_location(location, address_component, param='short_name'):
             return component[param]
 
 class API(webapp2.RequestHandler):
-    def options(self):      
-        self.response.headers['Access-Control-Allow-Origin'] = '*'
-        self.response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
-        self.response.headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT'
-
-    def get(self, req_type=None):
+    def get(self):
         self.response.headers['Access-Control-Allow-Origin'] = '*'
         self.response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
         self.response.headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT'
@@ -234,19 +190,6 @@ class API(webapp2.RequestHandler):
 
 # Error checking and input validation
         response = {}
-
-        include_today = True
-        include_tomorrow = True
-        if req_type:
-            include_today = (req_type == 'today')
-            include_tomorrow = (req_type == 'tomorrow')
-
-        if not include_today and not include_tomorrow:
-            logging.warn('Invalid API request - given req_type: "' + req_type + '"')
-            response['err'] = 'Invalid API request - bad API request type "' + req_type + '"'
-            response['fault'] = 'yours'
-            write(response)
-            return
 
         zipcode = self.request.get('zip', None)
         lat = self.request.get('lat', None)
@@ -275,67 +218,55 @@ class API(webapp2.RequestHandler):
             return
 # End input checking
 
+        # get zip code from goggle, turn into lat and lng
         if not lat or not lng:
             url = 'https://maps.googleapis.com/maps/api/geocode/json?address='+zipcode+'&key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'
             location = json.loads(urllib2.urlopen(url).read())
             lat = str(location['results'][0]['geometry']['location']['lat'])
             lng = str(location['results'][0]['geometry']['location']['lng'])
 
-        key = '71f6bcee6c068c552bf84460d5409'
+        key = '71f6bcee6c068c552bf84460d5409' #weather key
 
-        url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx'+ \
-              '?key='+key+ \
-              '&format=json'+ \
-              '&q='+lat+','+lng
-        today = json.loads(urllib2.urlopen(url).read())
-
+        # TODAY
         url = 'https://maps.googleapis.com/maps/api/timezone/json?key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg' + \
               '&timestamp='+str(int(time.mktime(datetime.datetime.now().timetuple()))) + \
               '&location='+lat+','+lng
         timezone_data = json.loads(urllib2.urlopen(url).read())
         hour_offset = timezone_data['rawOffset'] / 3600
         local_datetime = datetime.datetime.now() + datetime.timedelta(hours=hour_offset)
+        url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng
+        today = json.loads(urllib2.urlopen(url).read())
 
-        if include_today: # compare today to yesterday
-            yesterday_datetime = local_datetime - datetime.timedelta(1)
-            url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx'+ \
-                  '?key='+key+ \
-                  '&format=json'+ \
-                  '&q='+lat+','+lng+ \
-                  '&date='+yesterday_datetime.strftime('%Y-%m-%d')
-            yesterday = json.loads(urllib2.urlopen(url).read())
+        # YESTERDAY
+        yesterday_datetime = local_datetime - datetime.timedelta(1)
+        url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+yesterday_datetime.strftime('%Y-%m-%d')
+        yesterday = json.loads(urllib2.urlopen(url).read())
 
-            response['today'] = today_forecast(yesterday, today, local_datetime)
-            #response['tonight'] = tonight_temp_forecast(yesterday, today)
+        # TOMORROW
+        tomorrow_datetime = local_datetime + datetime.timedelta(1)
+        url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow_datetime.strftime('%Y-%m-%d')
+        tomorrow = json.loads(urllib2.urlopen(url).read())
 
-        if include_tomorrow: #compare tomorrow to today
-            tomorrow_datetime = local_datetime + datetime.timedelta(1)
-            url = 'http://api.worldweatheronline.com/free/v2/weather.ashx'+ \
-                  '?key='+key+ \
-                  '&format=json'+ \
-                  '&q='+lat+','+lng+ \
-                  '&date='+tomorrow_datetime.strftime('%Y-%m-%d')
-            tomorrow = json.loads(urllib2.urlopen(url).read())
+        (forecast_1, forecast_2, forecast_3) = forecast(yesterday, today, tomorrow, local_datetime)
 
-            response['tomorrow'] = tomorrow_forecast(today, tomorrow)
-            #response['tomorrow_night'] = tomorrow_night_temp_forecast(today, tomorrow)
+        response['current'] = forecast_1
+        response['next'] = forecast_2
+        response['next_next'] = forecast_3
 
         #LOCATION
-        url = 'https://maps.googleapis.com/maps/api/geocode/json'+ \
-              '?key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'+ \
-              '&latlng='+lat+','+lng
+        url = 'https://maps.googleapis.com/maps/api/geocode/json?key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg&latlng='+lat+','+lng
         location = json.loads(urllib2.urlopen(url).read())
 
         response['city'] = search_location(location, 'locality')
-        if search_location(location, 'country') not in ['US', 'USA']: #THEN THEY ARE A COMMUNIST
-            response['state'] = search_location(location, 'country', param='long_name') # stockholm, sweden
+        if search_location(location, 'country') not in ['US', 'USA']: # THEN THEY ARE A COMMUNIST
+            response['state'] = search_location(location, 'country', param='long_name') # ex: stockholm, sweden
         else:
             response['state'] = search_location(location, 'administrative_area_level_1')
         response['zip'] = search_location(location, 'postal_code')
         if response['zip'] == None:
             response['zip'] = '666'
+
         write(response)
-        return # send the data
 
 
 class MainHandler(webapp2.RequestHandler):
@@ -346,8 +277,7 @@ class MainHandler(webapp2.RequestHandler):
 
 
 app = webapp2.WSGIApplication([
-    (r'/api', API),
-    (r'/api/(.*)', API),
+    ('/api', API),
     ('/', MainHandler)
 ], debug=True)
 

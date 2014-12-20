@@ -1,12 +1,9 @@
 //:^)
 
 weather_data = {}; //want this to be global so we can use it l9r
-mode = 'Today';
+mode = 'current';
 var d = new Date();
 var hour = d.getHours();
-if (hour >= 17) {
-    switch_mode('Tomorrow'); //when to go to tonight/tomorrow night?
-}
 
 function use_geolocation() {
     var options = {
@@ -51,20 +48,6 @@ function get_success(data) {
     draw_data(weather_data);
 }
 
-function switch_mode(new_mode) {
-    if (new_mode.target) { //TODO: restructure this. i was writing this hastily
-        if (mode == 'Today')
-            new_mode = 'Tomorrow'
-        if (mode == 'Tomorrow')
-            new_mode = 'Today'
-    }
-    $('#switch_mode').html(mode + "'s forecast");
-    mode = new_mode;
-    draw_data(weather_data);
-}
-
-$('#switch_mode').click(switch_mode);
-
 $('#zip_submit').click(function() {
     var zip_code = $('#zip_box').val(); 
     if (zip_code.match(/^[0-9]{5}/) != null) {
@@ -93,6 +76,5 @@ function show_weather(weather_string, place_string){
     $('#forecast').show();
     $('#location_form').hide();
     $('#change_location').show();
-    $('#switch_mode').show();
 }
 
