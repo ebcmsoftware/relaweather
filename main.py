@@ -157,7 +157,7 @@ def forecast_day(yesterday, today, tomorrow, verb):
     (tempdata, precipdata) = get_forecast_data(today, tomorrow, False)
     forecast_3 = 'tomorrow will be ' + tempdata + ' today with ' + precipdata
 
-    return (forecast_1, forecast_2, forecast_3)
+    return [forecast_1, forecast_2, forecast_3]
 
 def forecast_night(yesterday, today, tomorrow, verb):
     (tempdata, precipdata) = get_forecast_data(yesterday, today, True)
@@ -169,19 +169,19 @@ def forecast_night(yesterday, today, tomorrow, verb):
     (tempdata, precipdata) = get_forecast_data(today, tomorrow, True)
     forecast_3 = 'tomorrow night will be ' + tempdata + ' tonight with ' + precipdata
 
-    return (forecast_1, forecast_2, forecast_3)
+    return [forecast_1, forecast_2, forecast_3]
 
 def forecast(yesterday, today, tomorrow, local_datetime):
     hour = (local_datetime - local_datetime.replace(hour=0,minute=0,second=0)).seconds / 3600.0
 
     if 4.0 < hour <= 7.0: # 4am to 7am
-        return forecast_day(yesterday, today, tomorrow, 'will be')
+        return forecast_day(yesterday, today, tomorrow, 'will be') + [1]
     elif 7.0 < hour <= 16.0: # 7am to 4pm
-        return forecast_day(yesterday, today, tomorrow, 'is')
+        return forecast_day(yesterday, today, tomorrow, 'is') + [2]
     elif 16.0 < hour <= 19.0: # 4pm to 7pm
-        return forecast_night(yesterday, today, tomorrow, 'will be')
+        return forecast_night(yesterday, today, tomorrow, 'will be') + [3]
     else: # 7pm to 4am
-        return forecast_night(yesterday, today, tomorrow, 'is')
+        return forecast_night(yesterday, today, tomorrow, 'is') + [4]
 
 def search_location(location, address_component, param='short_name'):
     components = location['results'][0]['address_components']
@@ -258,11 +258,13 @@ class API(webapp2.RequestHandler):
         url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow_datetime.strftime('%Y-%m-%d')
         tomorrow = json.loads(urllib2.urlopen(url).read())
 
-        (forecast_1, forecast_2, forecast_3) = forecast(yesterday, today, tomorrow, local_datetime)
+        logging.info(forecast(yesterday, today, tomorrow, local_datetime))
+        [forecast_1, forecast_2, forecast_3, data_type] = forecast(yesterday, today, tomorrow, local_datetime)
 
         response['current'] = forecast_1
         response['next'] = forecast_2
         response['next_next'] = forecast_3
+        response['data_type'] = data_type
 
         #LOCATION
         url = 'https://maps.googleapis.com/maps/api/geocode/json?key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg&latlng='+lat+','+lng
