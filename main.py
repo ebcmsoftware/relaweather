@@ -161,11 +161,11 @@ def forecast_night(yesterday, today, tomorrow, verb):
 def forecast(yesterday, today, tomorrow, local_datetime):
     hour = (today_datetime - today_datetime.replace(hour=0,minute=0,second=0)).seconds / 3600.0
 
-    if 5.0 < hour <= 11.0: # morning
+    if 4.0 < hour <= 7.0: # morning
         return forecast_day(yesterday, today, tomorrow, 'will be')
-    elif 11.0 < hour <= 17.0: # day
+    elif 7.0 < hour <= 16.0: # day
         return forecast_day(yesterday, today, tomorrow, 'is')
-    elif 17.0 < hour <= 23.0: # day
+    elif 16.0 < hour <= 20.0: # day
         return ('oh', 'oh2', 'oh3') #TODO remove this after implementing forecast
         return forecast_night(yesterday, today, tomorrow, 'will be')
     else: # night
