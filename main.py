@@ -1,13 +1,15 @@
 # big thx to worldweatheronline api
-# NOTE: ALL TEMPERATURES FARENHEIGHT, 
-# ALL PRECIPITATION VALUES IN MILLIMETERS
-# TODO: Day/night modularity and things
+# NOTE: ALL TEMPERATURES FARENHEIGHT
+# NOTE: ALL PRECIPITATION VALUES IN MILLIMETERS
+
+############## SETUP #############################################################
 
 import os
 import json
 import time
 import jinja2
 import random
+import urllib
 import logging
 import urllib2
 import webapp2
@@ -18,25 +20,22 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     extensions=['jinja2.ext.autoescape'],
     autoescape=True)
 
-################################################################################
+############## FUNCTIONS #############################################################
 
 # hourly average for param (used for precipitation but modularity is cool i guess)
-# TODO: found a problem with the data. Averaging "night" doesn't guaranteed work.
-#     -Counter-example: http://api.worldweatheronline.com/free/v2/weather.ashx?key=71f6bcee6c068c552bf84460d5409&format=json&q=99501&date=2014-12-21 
-#     -http://i.imgur.com/26rltFm.png 
-#     -I think only general solution to this is looping through each weather_data point and only adding the ones that are between the relevant time (i.e. 6am-6pm)
+# data should be numerical.
 def avg(weather_data, param, night):
     avg = 0.0
-    if night:
-        for i in range(4): #4*3 = 12. things are measured in 3hr periods, 12hrs is half the day.
-            avg += float(weather_data['data']['weather'][0]['hourly'][(i+5) % 8][param]) # 5, 6, 7, 0
-        avg /= 12.0
-        return avg
-    else:
-        for i in range(4): #4*3 = 12. things are measured in 3hr periods, 12hrs is half the day.
-            avg += float(weather_data['data']['weather'][0]['hourly'][i+1][param]) # 1, 2, 3, 4
-        avg /= 12.0
-        return avg
+    for datapoint in weather_data['data']['weather'][0]['hourly']:
+        time = int(datapoint['time'])
+        if night:
+            if time >= 1800 or time < 600:
+                avg += float(datapoint[param])
+        else:
+            if 600 <= time < 1800:
+                avg += float(datapoint[param])
+        avg /= 12.0 #TODO: is this divided by 12? or 4? is the "precipMM" over that 3hr period? I can't find anywhere on the docs that says it is, but this is what it seems like?
+    return avg
 
 
 # TODO: min temp vs getting "tonight's" low temp?!
@@ -200,7 +199,7 @@ def search_location(location, address_component, param='short_name'):
         if address_component in component['types']:
             return component[param]
 
-################################################################################
+######### API/SERVER LOGIC ###############################################################
 
 class API(webapp2.RequestHandler):
     def get(self):
@@ -245,7 +244,7 @@ class API(webapp2.RequestHandler):
         # get zip code from goggle, turn into lat and lng
         if not lat or not lng:
             url = 'https://maps.googleapis.com/maps/api/geocode/json?address='+zipcode+'&key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'
-            location = json.loads(urllib2.urlopen(url).read())
+            location = json.load(urllib.urlopen(url))
             lat = str(location['results'][0]['geometry']['location']['lat'])
             lng = str(location['results'][0]['geometry']['location']['lng'])
 
@@ -255,21 +254,21 @@ class API(webapp2.RequestHandler):
         url = 'https://maps.googleapis.com/maps/api/timezone/json?key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg' + \
               '&timestamp='+str(int(time.mktime(datetime.datetime.now().timetuple()))) + \
               '&location='+lat+','+lng
-        timezone_data = json.loads(urllib2.urlopen(url).read())
+        timezone_data = json.load(urllib.urlopen(url))
         hour_offset = timezone_data['rawOffset'] / 3600
         local_datetime = datetime.datetime.now() + datetime.timedelta(hours=hour_offset)
         url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng
-        today = json.loads(urllib2.urlopen(url).read())
+        today = json.load(urllib.urlopen(url))
 
         # YESTERDAY
         yesterday_datetime = local_datetime - datetime.timedelta(1)
         url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+yesterday_datetime.strftime('%Y-%m-%d')
-        yesterday = json.loads(urllib2.urlopen(url).read())
+        yesterday = json.load(urllib.urlopen(url))
 
         # TOMORROW
         tomorrow_datetime = local_datetime + datetime.timedelta(1)
         url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow_datetime.strftime('%Y-%m-%d')
-        tomorrow = json.loads(urllib2.urlopen(url).read())
+        tomorrow = json.load(urllib.urlopen(url))
 
         minutes = (local_datetime - local_datetime.replace(hour=0,minute=0,second=0)).seconds / 60
         random.seed(minutes / 10) #change random answers every 10 minutes. so refreshing doesnt change answers that that frequently. could also divide by n to change every n minutes.
@@ -282,7 +281,7 @@ class API(webapp2.RequestHandler):
 
         #LOCATION
         url = 'https://maps.googleapis.com/maps/api/geocode/json?key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg&latlng='+lat+','+lng
-        location = json.loads(urllib2.urlopen(url).read())
+        location = json.load(urllib.urlopen(url))
 
         response['city'] = search_location(location, 'locality')
         if search_location(location, 'country') not in ['US', 'USA']: # THEN THEY ARE A COMMUNIST
