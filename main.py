@@ -24,7 +24,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 
 # hourly average for param (used for precipitation but modularity is cool i guess)
 # data should be numerical.
-def avg(weather_data, param)
+def avg(weather_data, param):
     avg = 0.0
     for datapoint in weather_data[param]:
         avg += float(datapoint)
@@ -152,7 +152,7 @@ def forecast_day(weather_data, verb):
     (tempdata, precipdata) = get_forecast_data(data['yesterday'], data['today'])
     forecast_1 = 'today ' + verb + ' ' + tempdata + ' yesterday with ' + precipdata
 
-    (tempdata, precipdata) = get_forecast_data(data['yesterday_night'], data['tonight'])
+    (tempdata, precipdata) = get_forecast_data(data['last_night'], data['tonight'])
     forecast_2 = 'tonight will be ' + tempdata + ' last night with ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['today'], data['tomorrow'])
@@ -162,7 +162,7 @@ def forecast_day(weather_data, verb):
 
 
 def forecast_night(data, verb):
-    (tempdata, precipdata) = get_forecast_data(data['yesterday_night'], data['tonight'])
+    (tempdata, precipdata) = get_forecast_data(data['last_night'], data['tonight'])
     forecast_1 = 'tonight ' + verb + ' ' + tempdata + ' last night with ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['today'], data['tomorrow'])
@@ -193,38 +193,39 @@ def search_location(location, address_component, param='short_name'):
         if address_component in component['types']:
             return component[param]
 
+def max_temp(data):
+    return float(data['data']['weather'][0]['maxtempF'])
+
+def avg_night_temp(before, after):
+    return (
+        float(before['data']['weather'][0]['hourly'][-1]['FeelsLikeF']) + 
+        float(after['data']['weather'][0]['hourly'][0]['FeelsLikeF'])
+           ) / 2.0
+
+def arr_day(data, param):
+    hourly = data['data']['weather'][0]['hourly']
+    arr = []
+    for datapt in hourly:
+        if 600 < float(datapt['time']) <= 1800:
+            arr.append(datapt[param])
+    return arr
+
+def arr_night(before, after, param):
+    hourly_before = before['data']['weather'][0]['hourly']
+    hourly_after = after['data']['weather'][0]['hourly']
+    arr = []
+    for datapt in hourly_before:
+        if float(datapt['time']) > 1800:
+            arr.append(datapt[param])
+    for datapt in hourly_after:
+        if float(datapt['time']) <= 600:
+            arr.append(datapt[param])
+    return arr
+
+
 ######### API/SERVER LOGIC ###############################################################
 
 class API(webapp2.RequestHandler):
-    def max_temp(data):
-        return float(data['data']['weather'][0]['maxtempF'])
-
-    def avg_night_temp(before, after):
-        return (
-            float(before['data']['weather'][0]['hourly'][-1]['FeelsLikeF']) + 
-            float(after['data']['weather'][0]['hourly'][0]['FeelsLikeF'])
-               ) / 2.0
-
-    def arr_day(data, param):
-        hourly = data['data']['weather'][0]['hourly']
-        arr = []
-        for datapt in hourly:
-            if 600 < float(datapt['time']) <= 1800:
-                arr.append(datapt[param])
-        return arr
-
-    def arr_night(before, after, param):
-        hourly_before = before['data']['weather'][0]['hourly']
-        hourly_after = after['data']['weather'][0]['hourly']
-        arr = []
-        for datapt in hourly_before:
-            if float(datapt['time']) > 1800:
-                arr.append(datapt[param])
-        for datapt in hourly_after:
-            if float(datapt['time']) <= 600:
-                arr.append(datapt[param])
-        return arr
-
     def get(self):
         self.response.headers['Access-Control-Allow-Origin'] = '*'
         self.response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
