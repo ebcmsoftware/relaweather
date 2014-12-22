@@ -24,7 +24,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 
 # hourly average for param (used for precipitation but modularity is cool i guess)
 # data should be numerical.
-def avg(weather_data, param)
+def avg(weather_data, param):
     avg = 0.0
     for datapoint in weather_data[param]:
         avg += float(datapoint)
@@ -152,7 +152,7 @@ def forecast_day(weather_data, verb):
     (tempdata, precipdata) = get_forecast_data(data['yesterday'], data['today'])
     forecast_1 = 'today ' + verb + ' ' + tempdata + ' yesterday with ' + precipdata
 
-    (tempdata, precipdata) = get_forecast_data(data['yesterday_night'], data['tonight'])
+    (tempdata, precipdata) = get_forecast_data(data['last_night'], data['tonight'])
     forecast_2 = 'tonight will be ' + tempdata + ' last night with ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['today'], data['tomorrow'])
@@ -162,7 +162,7 @@ def forecast_day(weather_data, verb):
 
 
 def forecast_night(data, verb):
-    (tempdata, precipdata) = get_forecast_data(data['yesterday_night'], data['tonight'])
+    (tempdata, precipdata) = get_forecast_data(data['last_night'], data['tonight'])
     forecast_1 = 'tonight ' + verb + ' ' + tempdata + ' last night with ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['today'], data['tomorrow'])
