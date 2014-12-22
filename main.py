@@ -41,6 +41,7 @@ def avg(weather_data, param, night):
 # TODO: min temp vs getting "tonight's" low temp?!
 def get_temp(time, night):
     if night:
+        #TODO: Do this intelligently. Need tomorrow's data? But definitely don't look at midnight-6am of the current day.
         return float(time['data']['weather'][0]['mintempF'])
     else:
         return float(time['data']['weather'][0]['maxtempF'])
@@ -52,9 +53,8 @@ def cloud_forecast(cloud_percent):
     if cloud_percent < 75:
         return random.choice(['partly cloudy skies', 'some clouds'])
     if cloud_percent < 90:
-        return random.choice(['mostly cloudy skies', 'many clouds'])
-    else: 
-        return random.choice(['overcast', 'cloudy skies'])
+        return random.choice(['mostly cloudy skies', 'many clouds', 'cloud cover'])
+    return random.choice(['overcast', 'cloudy skies'])
 
 
 def rain_forecast(total_precip):
@@ -270,9 +270,77 @@ class API(webapp2.RequestHandler):
         url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow_datetime.strftime('%Y-%m-%d')
         tomorrow = json.load(urllib.urlopen(url))
 
+        # DAY AFTER TOMORROW
+        tomorrow2_datetime = local_datetime + datetime.timedelta(2)
+        url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow2_datetime.strftime('%Y-%m-%d')
+        tomorrow2 = json.load(urllib.urlopen(url))
+
+        def max_temp(data):
+            return float(data['data']['weather'][0]['maxtempF'])
+
+        def avg_night_temp(before, after):
+            return (
+                float(before['data']['weather'][0]['hourly'][-1]['FeelsLikeF']) + 
+                float(after['data']['weather'][0]['hourly'][0]['FeelsLikeF'])
+                   ) / 2.0
+
+        def arr_day(data, param):
+            hourly = data['data']['weather'][0]['hourly']
+            arr = []
+            for datapt in hourly:
+                if 600 < float(datapt['time']) <= 1800:
+                    arr.append(datapt[param])
+            return arr
+
+        def arr_night(before, after, param):
+            hourly_before = before['data']['weather'][0]['hourly']
+            hourly_after = after['data']['weather'][0]['hourly']
+            arr = []
+            for datapt in hourly_before:
+                if float(datapt['time']) > 1800:
+                    arr.append(datapt[param])
+            for datapt in hourly_after:
+                if float(datapt['time']) <= 600:
+                    arr.append(datapt[param])
+            return arr
+
+        # i can't name
+        ebcm = {}
+        ebcm['yesterday'] = {
+            'temp':max_temp(yesterday),
+            'cloudcover':arr_day(yesterday, 'cloudcover'),
+            'precipMM':arr_day(yesterday, 'precipMM')
+            }
+        ebcm['last_night'] = {
+            'temp':avg_night_temp(yesterday, today),
+            'cloudcover':arr_night(yesterday, today, 'cloudcover'),
+            'precipMM':arr_night(yesterday, today, 'precipMM')
+            }
+        ebcm['today'] = {
+            'temp':max_temp(today),
+            'cloudcover':arr_day(today, 'cloudcover'),
+            'precipMM':arr_day(today, 'precipMM')
+            }
+        ebcm['tonight'] = {
+            'temp':avg_night_temp(today, tomorrow),
+            'cloudcover':arr_night(today, tomorrow, 'cloudcover'),
+            'precipMM':arr_night(today, tomorrow, 'precipMM')
+            }
+        ebcm['tomorrow'] = {
+            'temp':max_temp(tomorrow),
+            'cloudcover':arr_day(tomorrow, 'cloudcover'),
+            'precipMM':arr_day(tomorrow, 'precipMM')
+            }
+        ebcm['tomorrow_night'] = {
+            'temp':avg_night_temp(tomorrow, tomorrow2),
+            'cloudcover':arr_night(tomorrow, tomorrow2, 'cloudcover'),
+            'precipMM':arr_night(tomorrow, tomorrow2, 'precipMM')
+            }
+
         minutes = (local_datetime - local_datetime.replace(hour=0,minute=0,second=0)).seconds / 60
-        random.seed(minutes / 10) #change random answers every 10 minutes. so refreshing doesnt change answers that that frequently. could also divide by n to change every n minutes.
-        [forecast_1, forecast_2, forecast_3, data_type] = forecast(yesterday, today, tomorrow, local_datetime)
+        random.seed(minutes / 10) # change random answers every 10 minutes. so refreshing doesnt change answers that that frequently. divide by n to change every n minutes.
+        #[forecast_1, forecast_2, forecast_3, data_type] = forecast(yesterday, today, tomorrow, local_datetime)
+        [forecast_1, forecast_2, forecast_3, data_type] = forecast(ebcm, local_datetime)
 
         response['current'] = forecast_1
         response['next'] = forecast_2
