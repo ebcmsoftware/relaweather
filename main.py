@@ -226,52 +226,7 @@ def arr_night(before, after, param):
 ######### API/SERVER LOGIC ###############################################################
 
 class API(webapp2.RequestHandler):
-    def get(self):
-        self.response.headers['Access-Control-Allow-Origin'] = '*'
-        self.response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
-        self.response.headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT'
-
-        # Writes a dict to the response
-        def write(response):
-            self.response.write(json.dumps(response, separators=(',',':'), sort_keys=True))
-
-# Error checking and input validation
-        response = {}
-
-        zipcode = self.request.get('zip', None)
-        lat = self.request.get('lat', None)
-        lng = self.request.get('lng', None)
-
-        try: # what gorgeous error checking (not)
-            if not (lat and lng) and not zipcode:
-                raise TypeError
-            if zipcode:
-                zi = int(zipcode)
-                if len(zipcode) != 5:
-                    raise TypeError
-            if lat:
-                latf = float(lat)
-                if latf < -90 or latf > 90:
-                    raise TypeError
-            if lng:
-                lngf = float(lng)
-                if lngf < -180 or lngf > 180:
-                    raise TypeError
-        except TypeError:
-            logging.warn('Invalid API request - given zip: %s, lat: %s, lng: %s' %(zipcode,lat,lng))
-            response['err'] = 'Invalid API request - bad zipcode or lat+lng'
-            response['fault'] = 'yours'
-            write(response)
-            return
-# End input checking
-
-        # get zip code from goggle, turn into lat and lng
-        if not lat or not lng:
-            url = 'https://maps.googleapis.com/maps/api/geocode/json?address='+zipcode+'&key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'
-            location = json.load(urllib.urlopen(url))
-            lat = str(location['results'][0]['geometry']['location']['lat'])
-            lng = str(location['results'][0]['geometry']['location']['lng'])
-
+    def get_data(self, lat, lng):
         key = '71f6bcee6c068c552bf84460d5409' #weather key
 
         # TODAY
@@ -331,8 +286,60 @@ class API(webapp2.RequestHandler):
             'precipMM':arr_night(tomorrow, tomorrow2, 'precipMM')
             }
 
+        return (weather_data, local_datetime)
+
+    def get(self):
+        self.response.headers['Access-Control-Allow-Origin'] = '*'
+        self.response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
+        self.response.headers['Access-Control-Allow-Methods'] = 'POST, GET, PUT'
+
+
+        # Writes a dict to the response
+        def write(response):
+            self.response.write(json.dumps(response, separators=(',',':'), sort_keys=True))
+
+# Error checking and input validation
+        response = {}
+
+        zipcode = self.request.get('zip', None)
+        lat = self.request.get('lat', None)
+        lng = self.request.get('lng', None)
+
+        try: # what gorgeous error checking (not)
+            if not (lat and lng) and not zipcode:
+                raise TypeError
+            if zipcode:
+                zi = int(zipcode)
+                if len(zipcode) != 5:
+                    raise TypeError
+            if lat:
+                latf = float(lat)
+                if latf < -90 or latf > 90:
+                    raise TypeError
+            if lng:
+                lngf = float(lng)
+                if lngf < -180 or lngf > 180:
+                    raise TypeError
+        except TypeError:
+            logging.warn('Invalid API request - given zip: %s, lat: %s, lng: %s' %(zipcode,lat,lng))
+            response['err'] = 'Invalid API request - bad zipcode or lat+lng'
+            response['fault'] = 'yours'
+            write(response)
+            return
+# End input checking
+
+        # get zip code from goggle, turn into lat and lng
+        if not lat or not lng:
+            url = 'https://maps.googleapis.com/maps/api/geocode/json?address='+zipcode+'&key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg'
+            location = json.load(urllib.urlopen(url))
+            lat = str(location['results'][0]['geometry']['location']['lat'])
+            lng = str(location['results'][0]['geometry']['location']['lng'])
+
+        (weather_data, local_datetime) = self.get_data(lat, lng)
+
         minutes = (local_datetime - local_datetime.replace(hour=0,minute=0,second=0)).seconds / 60
-        random.seed(minutes / 10) # change random answers every 10 minutes. so refreshing doesnt change answers that that frequently. divide by n to change every n minutes.
+        random.seed(minutes / 10) #every 10 mins
+
         [forecast_1, forecast_2, forecast_3, data_type] = forecast(weather_data, local_datetime)
 
         response['current'] = forecast_1
@@ -340,15 +347,15 @@ class API(webapp2.RequestHandler):
         response['next_next'] = forecast_3
         response['data_type'] = data_type
 
-        #LOCATION
+        # LOCATION
         url = 'https://maps.googleapis.com/maps/api/geocode/json?key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg&latlng='+lat+','+lng
         location = json.load(urllib.urlopen(url))
 
-        response['city'] = search_location(location, 'locality')
-        if search_location(location, 'country') not in ['US', 'USA']: # THEN THEY ARE A COMMUNIST
+        response['city'] = search_location(location, 'locality') #city
+        if search_location(location, 'country') not in ['US', 'USA']:
             response['state'] = search_location(location, 'country', param='long_name') # ex: stockholm, sweden
         else:
-            response['state'] = search_location(location, 'administrative_area_level_1')
+            response['state'] = search_location(location, 'administrative_area_level_1') #ex: greenville, sc
         response['zip'] = search_location(location, 'postal_code')
         if response['zip'] == None:
             response['zip'] = '666'
