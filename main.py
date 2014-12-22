@@ -24,17 +24,11 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 
 # hourly average for param (used for precipitation but modularity is cool i guess)
 # data should be numerical.
-def avg(weather_data, param, night):
+def avg(weather_data, param)
     avg = 0.0
-    for datapoint in weather_data['data']['weather'][0]['hourly']:
-        time = int(datapoint['time'])
-        if night:
-            if time >= 1800 or time < 600:
-                avg += float(datapoint[param])
-        else:
-            if 600 <= time < 1800:
-                avg += float(datapoint[param])
-        avg /= 12.0 #TODO: is this divided by 12? or 4? is the "precipMM" over that 3hr period? I can't find anywhere on the docs that says it is, but this is what it seems like?
+    for datapoint in weather_data[param]:
+        avg += float(datapoint)
+    avg /= 12.0 #TODO: is this divided by 12? or 4? is the "precipMM" over that 3hr period? I can't find anywhere on the docs that says it is, but this is what it seems like?
     return avg
 
 
@@ -305,33 +299,33 @@ class API(webapp2.RequestHandler):
             return arr
 
         # i can't name
-        ebcm = {}
-        ebcm['yesterday'] = {
+        weather_data = {}
+        weather_data['yesterday'] = {
             'temp':max_temp(yesterday),
             'cloudcover':arr_day(yesterday, 'cloudcover'),
             'precipMM':arr_day(yesterday, 'precipMM')
             }
-        ebcm['last_night'] = {
+        weather_data['last_night'] = {
             'temp':avg_night_temp(yesterday, today),
             'cloudcover':arr_night(yesterday, today, 'cloudcover'),
             'precipMM':arr_night(yesterday, today, 'precipMM')
             }
-        ebcm['today'] = {
+        weather_data['today'] = {
             'temp':max_temp(today),
             'cloudcover':arr_day(today, 'cloudcover'),
             'precipMM':arr_day(today, 'precipMM')
             }
-        ebcm['tonight'] = {
+        weather_data['tonight'] = {
             'temp':avg_night_temp(today, tomorrow),
             'cloudcover':arr_night(today, tomorrow, 'cloudcover'),
             'precipMM':arr_night(today, tomorrow, 'precipMM')
             }
-        ebcm['tomorrow'] = {
+        weather_data['tomorrow'] = {
             'temp':max_temp(tomorrow),
             'cloudcover':arr_day(tomorrow, 'cloudcover'),
             'precipMM':arr_day(tomorrow, 'precipMM')
             }
-        ebcm['tomorrow_night'] = {
+        weather_data['tomorrow_night'] = {
             'temp':avg_night_temp(tomorrow, tomorrow2),
             'cloudcover':arr_night(tomorrow, tomorrow2, 'cloudcover'),
             'precipMM':arr_night(tomorrow, tomorrow2, 'precipMM')
@@ -340,7 +334,7 @@ class API(webapp2.RequestHandler):
         minutes = (local_datetime - local_datetime.replace(hour=0,minute=0,second=0)).seconds / 60
         random.seed(minutes / 10) # change random answers every 10 minutes. so refreshing doesnt change answers that that frequently. divide by n to change every n minutes.
         #[forecast_1, forecast_2, forecast_3, data_type] = forecast(yesterday, today, tomorrow, local_datetime)
-        [forecast_1, forecast_2, forecast_3, data_type] = forecast(ebcm, local_datetime)
+        [forecast_1, forecast_2, forecast_3, data_type] = forecast(weather_data, local_datetime)
 
         response['current'] = forecast_1
         response['next'] = forecast_2
