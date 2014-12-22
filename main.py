@@ -196,6 +196,35 @@ def search_location(location, address_component, param='short_name'):
 ######### API/SERVER LOGIC ###############################################################
 
 class API(webapp2.RequestHandler):
+    def max_temp(data):
+        return float(data['data']['weather'][0]['maxtempF'])
+
+    def avg_night_temp(before, after):
+        return (
+            float(before['data']['weather'][0]['hourly'][-1]['FeelsLikeF']) + 
+            float(after['data']['weather'][0]['hourly'][0]['FeelsLikeF'])
+               ) / 2.0
+
+    def arr_day(data, param):
+        hourly = data['data']['weather'][0]['hourly']
+        arr = []
+        for datapt in hourly:
+            if 600 < float(datapt['time']) <= 1800:
+                arr.append(datapt[param])
+        return arr
+
+    def arr_night(before, after, param):
+        hourly_before = before['data']['weather'][0]['hourly']
+        hourly_after = after['data']['weather'][0]['hourly']
+        arr = []
+        for datapt in hourly_before:
+            if float(datapt['time']) > 1800:
+                arr.append(datapt[param])
+        for datapt in hourly_after:
+            if float(datapt['time']) <= 600:
+                arr.append(datapt[param])
+        return arr
+
     def get(self):
         self.response.headers['Access-Control-Allow-Origin'] = '*'
         self.response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
@@ -269,36 +298,6 @@ class API(webapp2.RequestHandler):
         url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow2_datetime.strftime('%Y-%m-%d')
         tomorrow2 = json.load(urllib.urlopen(url))
 
-        def max_temp(data):
-            return float(data['data']['weather'][0]['maxtempF'])
-
-        def avg_night_temp(before, after):
-            return (
-                float(before['data']['weather'][0]['hourly'][-1]['FeelsLikeF']) + 
-                float(after['data']['weather'][0]['hourly'][0]['FeelsLikeF'])
-                   ) / 2.0
-
-        def arr_day(data, param):
-            hourly = data['data']['weather'][0]['hourly']
-            arr = []
-            for datapt in hourly:
-                if 600 < float(datapt['time']) <= 1800:
-                    arr.append(datapt[param])
-            return arr
-
-        def arr_night(before, after, param):
-            hourly_before = before['data']['weather'][0]['hourly']
-            hourly_after = after['data']['weather'][0]['hourly']
-            arr = []
-            for datapt in hourly_before:
-                if float(datapt['time']) > 1800:
-                    arr.append(datapt[param])
-            for datapt in hourly_after:
-                if float(datapt['time']) <= 600:
-                    arr.append(datapt[param])
-            return arr
-
-        # i can't name
         weather_data = {}
         weather_data['yesterday'] = {
             'temp':max_temp(yesterday),
@@ -333,7 +332,6 @@ class API(webapp2.RequestHandler):
 
         minutes = (local_datetime - local_datetime.replace(hour=0,minute=0,second=0)).seconds / 60
         random.seed(minutes / 10) # change random answers every 10 minutes. so refreshing doesnt change answers that that frequently. divide by n to change every n minutes.
-        #[forecast_1, forecast_2, forecast_3, data_type] = forecast(yesterday, today, tomorrow, local_datetime)
         [forecast_1, forecast_2, forecast_3, data_type] = forecast(weather_data, local_datetime)
 
         response['current'] = forecast_1
