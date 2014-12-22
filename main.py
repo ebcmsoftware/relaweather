@@ -32,13 +32,13 @@ def avg(weather_data, param)
     return avg
 
 
-# TODO: min temp vs getting "tonight's" low temp?!
-def get_temp(time, night):
-    if night:
-        #TODO: Do this intelligently. Need tomorrow's data? But definitely don't look at midnight-6am of the current day.
-        return float(time['data']['weather'][0]['mintempF'])
-    else:
-        return float(time['data']['weather'][0]['maxtempF'])
+# # TODO: min temp vs getting "tonight's" low temp?!
+# def get_temp(time):
+#     if night:
+#         #TODO: Do this intelligently. Need tomorrow's data? But definitely don't look at midnight-6am of the current day.
+#         return float(time['data']['weather'][0]['mintempF'])
+#     else:
+#         return float(time['data']['weather'][0]['maxtempF'])
 
 
 def cloud_forecast(cloud_percent):
@@ -135,12 +135,12 @@ def temp_forecast(temp_before, temp_after):
     return adj + ' ' + hot_or_cold + ' than'
 
 
-def get_forecast_data(last, current, night):
-    last_temp = get_temp(last, night)
-    now_temp = get_temp(current, night)
+def get_forecast_data(last, current):
+    last_temp = last['temp']
+    now_temp = current['temp']
 
-    total_precip = avg(current, 'precipMM', night) * 12.0
-    cloud_percent = avg(current, 'cloudcover', night)
+    total_precip = avg(current, 'precipMM') * 12.0
+    cloud_percent = avg(current, 'cloudcover')
 
     temperature = temp_forecast(last_temp, now_temp)
     precip = precip_forecast(total_precip, cloud_percent, now_temp)
@@ -148,43 +148,43 @@ def get_forecast_data(last, current, night):
     return (temperature, precip)
 
 
-def forecast_day(yesterday, today, tomorrow, verb):
-    (tempdata, precipdata) = get_forecast_data(yesterday, today, False)
+def forecast_day(weather_data, verb):
+    (tempdata, precipdata) = get_forecast_data(data['yesterday'], data['today'])
     forecast_1 = 'today ' + verb + ' ' + tempdata + ' yesterday with ' + precipdata
 
-    (tempdata, precipdata) = get_forecast_data(yesterday, today, True)
+    (tempdata, precipdata) = get_forecast_data(data['yesterday_night'], data['tonight'])
     forecast_2 = 'tonight will be ' + tempdata + ' last night with ' + precipdata
 
-    (tempdata, precipdata) = get_forecast_data(today, tomorrow, False)
+    (tempdata, precipdata) = get_forecast_data(data['today'], data['tomorrow'])
     forecast_3 = 'tomorrow will be ' + tempdata + ' today with ' + precipdata
 
     return [forecast_1, forecast_2, forecast_3]
 
 
-def forecast_night(yesterday, today, tomorrow, verb):
-    (tempdata, precipdata) = get_forecast_data(yesterday, today, True)
+def forecast_night(data, verb):
+    (tempdata, precipdata) = get_forecast_data(data['yesterday_night'], data['tonight'])
     forecast_1 = 'tonight ' + verb + ' ' + tempdata + ' last night with ' + precipdata
 
-    (tempdata, precipdata) = get_forecast_data(yesterday, today, False)
+    (tempdata, precipdata) = get_forecast_data(data['today'], data['tomorrow'])
     forecast_2 = 'tomorrow will be ' + tempdata + ' today was with ' + precipdata #TODO: yesterday?!
 
-    (tempdata, precipdata) = get_forecast_data(today, tomorrow, True)
+    (tempdata, precipdata) = get_forecast_data(data['tonight'], data['tomorrow_night'])
     forecast_3 = 'tomorrow night will be ' + tempdata + ' tonight with ' + precipdata
 
     return [forecast_1, forecast_2, forecast_3]
 
 
-def forecast(yesterday, today, tomorrow, local_datetime):
+def forecast(weather_data, local_datetime):
     hour = (local_datetime - local_datetime.replace(hour=0,minute=0,second=0)).seconds / 3600.0
 
     if 4.0 < hour <= 7.0: # 4am to 7am
-        return forecast_day(yesterday, today, tomorrow, 'will be') + [1]
+        return forecast_day(weather_data, 'will be') + [1]
     elif 7.0 < hour <= 16.0: # 7am to 4pm
-        return forecast_day(yesterday, today, tomorrow, 'is') + [2]
+        return forecast_day(weather_data, 'is') + [2]
     elif 16.0 < hour <= 19.0: # 4pm to 7pm
-        return forecast_night(yesterday, today, tomorrow, 'will be') + [3]
+        return forecast_night(weather_data, 'will be') + [3]
     else: # 7pm to 4am
-        return forecast_night(yesterday, today, tomorrow, 'is') + [4]
+        return forecast_night(weather_data, 'is') + [4]
 
 
 def search_location(location, address_component, param='short_name'):
