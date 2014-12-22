@@ -9,10 +9,11 @@ import json
 import time
 import jinja2
 import random
+import thread
 import urllib
 import logging
-import urllib2
 import webapp2
+import urllib2
 import datetime
 
 JINJA_ENVIRONMENT = jinja2.Environment(
@@ -116,7 +117,6 @@ def hot_or_cold_adj(temp_diff, avg_temp):
         if avg_temp > 80:
             return 'hotter'
 
-
 # returns a string describing the difference between temp_before and temp_after
 def temp_forecast(temp_before, temp_after):
     temp_diff = temp_after - temp_before
@@ -148,7 +148,7 @@ def get_forecast_data(last, current):
     return (temperature, precip)
 
 
-def forecast_day(weather_data, verb):
+def forecast_day(data, verb):
     (tempdata, precipdata) = get_forecast_data(data['yesterday'], data['today'])
     forecast_1 = 'today ' + verb + ' ' + tempdata + ' yesterday with ' + precipdata
 
@@ -225,34 +225,55 @@ def arr_night(before, after, param):
 
 ######### API/SERVER LOGIC ###############################################################
 
+today = yesterday = tomorrow = tomorrow2 = None
+
 class API(webapp2.RequestHandler):
     def get_data(self, lat, lng):
         key = '71f6bcee6c068c552bf84460d5409' #weather key
 
-        # TODAY
         url = 'https://maps.googleapis.com/maps/api/timezone/json?key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg' + \
               '&timestamp='+str(int(time.mktime(datetime.datetime.now().timetuple()))) + \
               '&location='+lat+','+lng
         timezone_data = json.load(urllib.urlopen(url))
         hour_offset = timezone_data['rawOffset'] / 3600
         local_datetime = datetime.datetime.now() + datetime.timedelta(hours=hour_offset)
-        url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng
-        today = json.load(urllib.urlopen(url))
 
-        # YESTERDAY
-        yesterday_datetime = local_datetime - datetime.timedelta(1)
-        url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+yesterday_datetime.strftime('%Y-%m-%d')
-        yesterday = json.load(urllib.urlopen(url))
 
-        # TOMORROW
-        tomorrow_datetime = local_datetime + datetime.timedelta(1)
-        url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow_datetime.strftime('%Y-%m-%d')
-        tomorrow = json.load(urllib.urlopen(url))
+        def assign_today():
+            global today
+            # TODAY
+            url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng
+            today = json.load(urllib.urlopen(url))
 
-        # DAY AFTER TOMORROW
-        tomorrow2_datetime = local_datetime + datetime.timedelta(2)
-        url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow2_datetime.strftime('%Y-%m-%d')
-        tomorrow2 = json.load(urllib.urlopen(url))
+        def assign_yesterday():
+            global yesterday
+            # YESTERDAY
+            yesterday_datetime = local_datetime - datetime.timedelta(1)
+            url = 'http://api.worldweatheronline.com/free/v2/past-weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+yesterday_datetime.strftime('%Y-%m-%d')
+            yesterday = json.load(urllib.urlopen(url))
+
+        def assign_tomorrow():
+            global tomorrow
+            # TOMORROW
+            tomorrow_datetime = local_datetime + datetime.timedelta(1)
+            url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow_datetime.strftime('%Y-%m-%d')
+            tomorrow = json.load(urllib.urlopen(url))
+
+        def assign_tomorrow2():
+            global tomorrow2
+            # DAY AFTER TOMORROW
+            tomorrow2_datetime = local_datetime + datetime.timedelta(2)
+            url = 'http://api.worldweatheronline.com/free/v2/weather.ashx?key='+key+'&format=json&q='+lat+','+lng+'&date='+tomorrow2_datetime.strftime('%Y-%m-%d')
+            tomorrow2 = json.load(urllib.urlopen(url))
+
+        # async for performance
+        thread.start_new_thread(assign_today, ())
+        thread.start_new_thread(assign_yesterday, ())
+        thread.start_new_thread(assign_tomorrow, ())
+        thread.start_new_thread(assign_tomorrow2, ())
+
+        while not (today and yesterday and tomorrow and tomorrow2):
+            continue
 
         weather_data = {}
         weather_data['yesterday'] = {
@@ -285,8 +306,8 @@ class API(webapp2.RequestHandler):
             'cloudcover':arr_night(tomorrow, tomorrow2, 'cloudcover'),
             'precipMM':arr_night(tomorrow, tomorrow2, 'precipMM')
             }
-
         return (weather_data, local_datetime)
+            
 
     def get(self):
         self.response.headers['Access-Control-Allow-Origin'] = '*'
@@ -335,7 +356,13 @@ class API(webapp2.RequestHandler):
             lat = str(location['results'][0]['geometry']['location']['lat'])
             lng = str(location['results'][0]['geometry']['location']['lng'])
 
-        (weather_data, local_datetime) = self.get_data(lat, lng)
+        return_val = self.get_data(lat, lng)
+        if return_val:
+            (weather_data, local_datetime) = return_val
+        else:
+            logging.info('NOPE KEK')
+            logging.info('PEACE')
+            return
 
         minutes = (local_datetime - local_datetime.replace(hour=0,minute=0,second=0)).seconds / 60
         random.seed(minutes / 10) #every 10 mins
