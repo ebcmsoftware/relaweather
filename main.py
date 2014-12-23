@@ -21,6 +21,42 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     extensions=['jinja2.ext.autoescape'],
     autoescape=True)
 
+############## DATABASE #############################################################
+
+from google.appengine.ext import ndb
+from google.appengine.ext import db
+
+class Cache(ndb.Model):
+    key = ndb.StringProperty(default='')
+    data = ndb.StringProperty(repeated=True) # every 500 chars = chuck of data
+    time_stored = ndb.DateTimeProperty()
+
+    # encodes a dict, d, as a list of strings of at most 500 chars
+    # stores it as "data" (json stringifying it) under key "key"
+    # sets time_stored to right now and put()s the query
+    def store_dict(self, d):
+        str_rep = json.dumps(d, separators=(',',':'))
+        length = len(str_rep)
+        data = [str_rep[i:i + 500] for i in range(0, length, 500)]
+        #stored_data = Cache.query(Cache.key == key).fetch(1)
+        #if stored_data == []:
+        #    entity = Cache(parent=ndb.Key('Key', key))
+        #else:
+        #    entity = stored_data[0]
+        self.data = data
+        self.time_stored = datetime.datetime.now()
+        self.put()
+
+    # returns, in dict form, the dictionary stored with 'key'
+    # parses the list of strings and un-JSONs it
+    def get_dict(self):
+        data = list(self.data)
+        str_rep = ''
+        for s in data:
+            str_rep += s
+        return json.loads(str_rep)
+
+
 ############## FUNCTIONS #############################################################
 
 # hourly average for param (used for precipitation but modularity is cool i guess)
@@ -228,16 +264,17 @@ def arr_night(before, after, param):
 today = yesterday = tomorrow = tomorrow2 = None
 
 class API(webapp2.RequestHandler):
-    def get_data(self, lat, lng):
-        key = '71f6bcee6c068c552bf84460d5409' #weather key
-
+    def get_local_datetime(self, lat, lng):
         url = 'https://maps.googleapis.com/maps/api/timezone/json?key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg' + \
               '&timestamp='+str(int(time.mktime(datetime.datetime.now().timetuple()))) + \
               '&location='+lat+','+lng
         timezone_data = json.load(urllib.urlopen(url))
         hour_offset = timezone_data['rawOffset'] / 3600
         local_datetime = datetime.datetime.now() + datetime.timedelta(hours=hour_offset)
+        return local_datetime
 
+    def get_data(self, lat, lng, local_datetime):
+        key = '71f6bcee6c068c552bf84460d5409' #weather key
 
         def assign_today():
             global today
@@ -273,7 +310,7 @@ class API(webapp2.RequestHandler):
         thread.start_new_thread(assign_tomorrow2, ())
 
         while not (today and yesterday and tomorrow and tomorrow2):
-            continue
+            pass
 
         weather_data = {}
         weather_data['yesterday'] = {
@@ -306,7 +343,7 @@ class API(webapp2.RequestHandler):
             'cloudcover':arr_night(tomorrow, tomorrow2, 'cloudcover'),
             'precipMM':arr_night(tomorrow, tomorrow2, 'precipMM')
             }
-        return (weather_data, local_datetime)
+        return weather_data
             
 
     def get(self):
@@ -356,24 +393,6 @@ class API(webapp2.RequestHandler):
             lat = str(location['results'][0]['geometry']['location']['lat'])
             lng = str(location['results'][0]['geometry']['location']['lng'])
 
-        return_val = self.get_data(lat, lng)
-        if return_val:
-            (weather_data, local_datetime) = return_val
-        else:
-            logging.info('NOPE KEK')
-            logging.info('PEACE')
-            return
-
-        minutes = (local_datetime - local_datetime.replace(hour=0,minute=0,second=0)).seconds / 60
-        random.seed(minutes / 10) #every 10 mins
-
-        [forecast_1, forecast_2, forecast_3, data_type] = forecast(weather_data, local_datetime)
-
-        response['current'] = forecast_1
-        response['next'] = forecast_2
-        response['next_next'] = forecast_3
-        response['data_type'] = data_type
-
         # LOCATION
         url = 'https://maps.googleapis.com/maps/api/geocode/json?key=AIzaSyCGA86L8v4Lh-AUJHsKvQODP8SNsbTjYqg&latlng='+lat+','+lng
         location = json.load(urllib.urlopen(url))
@@ -383,9 +402,45 @@ class API(webapp2.RequestHandler):
             response['state'] = search_location(location, 'country', param='long_name') # ex: stockholm, sweden
         else:
             response['state'] = search_location(location, 'administrative_area_level_1') #ex: greenville, sc
-        response['zip'] = search_location(location, 'postal_code')
+        zipcode = search_location(location, 'postal_code')
+        response['zip'] = zipcode
         if response['zip'] == None:
             response['zip'] = '666'
+
+        # GET WEATHER DATA
+        stored_data = Cache.query(Cache.key == zipcode).fetch(1)
+        overwrite_cache = False
+        if stored_data != []:
+            entity = stored_data[0]
+            time_stored = entity.time_stored
+            if time_stored < datetime.datetime.now() - datetime.timedelta(minutes=10): # if older than n minutes ago, too old
+                overwrite_cache = True
+        else:
+            overwrite_cache = True
+
+        local_datetime = self.get_local_datetime(lat, lng)
+        if overwrite_cache:
+            if stored_data == []:
+                entity = Cache(parent=ndb.Key('Key', zipcode))
+                entity.key = zipcode
+            else:
+                entity = stored_data[0]
+            weather_data = self.get_data(lat, lng, local_datetime) # queries like 8 apis - wanna stay away from dis
+            entity.store_dict(weather_data)
+            entity.put()
+        else:
+            logging.info('actually getting data back from the cache for zipcode: %s' %zipcode)
+            weather_data = entity.get_dict()
+
+        minutes = (local_datetime - local_datetime.replace(hour=0,minute=0,second=0)).seconds / 60
+        random.seed(minutes / 10) # every 10 mins, generate new random strings
+
+        [forecast_1, forecast_2, forecast_3, data_type] = forecast(weather_data, local_datetime)
+
+        response['current'] = forecast_1
+        response['next'] = forecast_2
+        response['next_next'] = forecast_3
+        response['data_type'] = data_type
 
         write(response)
 
