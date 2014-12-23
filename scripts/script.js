@@ -25,8 +25,50 @@ function use_geolocation() {
     navigator.geolocation.getCurrentPosition(success, error, options);
 }
 
+function next() {
+    switch(mode) {
+        case 'current':
+            mode = 'next';
+            $('#weather_desc1').hide();
+            $('#weather_desc2').show();
+            $('#weather_desc3').hide();
+            $('#prev').show();
+            break;
+        case 'next':
+            mode = 'next_next';
+            $('#weather_desc1').hide();
+            $('#weather_desc2').hide();
+            $('#weather_desc3').show();
+            $('#next').hide();
+            break;
+    }
+}
+
+function prev() {
+    switch(mode) {
+        case 'next':
+            mode = 'current';
+            $('#weather_desc1').show();
+            $('#weather_desc2').hide();
+            $('#weather_desc3').hide();
+            $('#prev').hide();
+            break;
+        case 'next_next':
+            mode = 'next';
+            $('#weather_desc1').hide();
+            $('#weather_desc2').show();
+            $('#weather_desc3').hide();
+            $('#next').show();
+            break;
+    }
+}
+
 $(document).ready(function() {
-    $('#switch_mode').hide();
+    $('#prev').click(prev);
+    $('#next').click(next);
+    $('#prev').hide();
+    $('#weather_desc2').hide();
+    $('#weather_desc3').hide();
     $('#location_name').hide();
     $('#location_form').hide();
     $('#change_location').hide();
@@ -36,8 +78,6 @@ $(document).ready(function() {
 });
 
 function draw_data(weather_data) {
-    // var weather = mode + " <-- DEBUG";
-    // weather = weather_data[mode.toLowerCase()] || '';
     weather = [weather_data['current'], weather_data['next'], weather_data['next_next']]
     place = weather_data.city + ", " + weather_data.state
 
