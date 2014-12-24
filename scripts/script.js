@@ -1,7 +1,7 @@
 //:^)
 
-weather_data = {}; //want this to be global so we can use it l9r
-mode = 'current';
+var weather_data = {}; //want this to be global so we can use it l9r
+var mode = 'current';
 var d = new Date();
 var hour = d.getHours();
 

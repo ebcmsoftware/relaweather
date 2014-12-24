@@ -89,11 +89,12 @@ def cloud_forecast(cloud_percent):
 
 
 def rain_forecast(total_precip):
-    if total_precip <= 8:
+    logging.info(total_precip)
+    if total_precip <= 5:
         return random.choice(['some', 'a few']) + ' ' + random.choice(['drizzles', 'sprinkles'])
-    if total_precip <= 20:
+    if total_precip <= 15:
         return random.choice(['a little precipitation', 'some showers'])
-    if total_precip <= 40: 
+    if total_precip <= 25: 
         return random.choice(['steady rain', 'quite a bit of rain'])
     else:
         return 'lots of rain'
@@ -413,13 +414,14 @@ class API(webapp2.RequestHandler):
         if stored_data != []:
             entity = stored_data[0]
             time_stored = entity.time_stored
-            if time_stored < datetime.datetime.now() - datetime.timedelta(minutes=10): # if older than n minutes ago, too old
+            if time_stored < datetime.datetime.now() - datetime.timedelta(minutes=30): # if older than n minutes ago, too old
                 overwrite_cache = True
         else:
             overwrite_cache = True
 
         local_datetime = self.get_local_datetime(lat, lng)
         if overwrite_cache:
+            logging.info('writing data to cache for zipcode: %s' %zipcode)
             if stored_data == []:
                 entity = Cache(parent=ndb.Key('Key', zipcode))
                 entity.key = zipcode
