@@ -191,7 +191,7 @@ def forecast_night(data, verb):
     forecast_1 = 'tonight ' + verb + ' ' + tempdata + ' last night with ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['today'], data['tomorrow'])
-    forecast_2 = 'tomorrow will be ' + tempdata + ' today was with ' + precipdata #TODO: yesterday?!
+    forecast_2 = 'tomorrow will be ' + tempdata + ' today with ' + precipdata #TODO: yesterday?!
 
     (tempdata, precipdata) = get_forecast_data(data['tonight'], data['tomorrow_night'])
     forecast_3 = 'tomorrow night will be ' + tempdata + ' tonight with ' + precipdata
@@ -224,7 +224,7 @@ def max_temp(data):
 def avg_night_temp(before, after):
     return (
         float(before['data']['weather'][0]['hourly'][-1]['FeelsLikeF']) + 
-        float(after['data']['weather'][0]['hourly'][0]['FeelsLikeF'])
+        float( after['data']['weather'][0]['hourly'][0]['FeelsLikeF'])
            ) / 2.0
 
 def arr_day(data, param):
