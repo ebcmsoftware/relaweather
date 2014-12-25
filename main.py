@@ -131,25 +131,13 @@ def hot_or_cold_adj(temp_diff, avg_temp):
         return ''
 
     if temp_diff < 0:
-        if avg_temp <= 30:
+        if avg_temp <= 40:
             return 'colder'
-        if 30 < avg_temp <= 50: # joined inequalities for readability
-            return 'chillier'
-        if 50 < avg_temp <= 60:
+        if avg_temp > 40:
             return 'cooler'
-        if 60 < avg_temp <= 80:
-            return 'less warm'
-        if avg_temp > 80:
-            return 'less hot'
 
     if temp_diff > 0:
-        if avg_temp < 30:
-            return 'less cold'
-        if 30 < avg_temp <= 60:
-            return 'less chilly'
-        #if 50 < avg_temp <= 60: #commented it out. "tomorrow will be much less cool than today" just doesn't sound right to me. feel free to add it back in or tweak.
-        #    return 'less cool'
-        if 60 < avg_temp <= 80:
+        if avg_temp <= 80:
             return 'warmer'
         if avg_temp > 80:
             return 'hotter'
