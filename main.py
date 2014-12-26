@@ -80,35 +80,35 @@ def avg(weather_data, param):
 
 def cloud_forecast(cloud_percent):
     if cloud_percent < 25:
-        return random.choice(['clear skies', 'few clouds'])
+        return random.choice(['with clear skies', 'and sunny'])
     if cloud_percent < 75:
-        return random.choice(['partly cloudy skies', 'some clouds'])
+        return random.choice(['with partly cloudy skies', 'with some clouds', 'and a little cloudy'])
     if cloud_percent < 90:
-        return random.choice(['mostly cloudy skies', 'many clouds', 'cloud cover'])
-    return random.choice(['overcast', 'cloudy skies'])
+        return random.choice(['with mostly cloudy skies', 'with many clouds', 'with cloud cover', 'and cloudly'])
+    return random.choice(['and overcast', 'with cloudy skies'])
 
 
 def rain_forecast(total_precip):
     logging.info(total_precip)
     if total_precip <= 5:
-        return random.choice(['some', 'a few']) + ' ' + random.choice(['drizzles', 'sprinkles'])
+        return random.choice(['with ' + random.choice(['some', 'a few']) + ' ' + random.choice(['drizzles', 'sprinkles']), 'and drizzly'])
     if total_precip <= 15:
-        return random.choice(['a little precipitation', 'some showers'])
+        return random.choice(['with a little precipitation', 'with some showers', 'and a little rainy'])
     if total_precip <= 25: 
-        return random.choice(['steady rain', 'quite a bit of rain'])
+        return random.choice(['with steady rain', 'with quite a bit of rain', 'and rainy'])
     else:
-        return 'lots of rain'
+        return 'with lots of rain'
 
 
 def snow_forecast(total_precip):
     if total_precip <= 25: # inch of snow
-        return random.choice(['some', 'a few']) + ' ' + random.choice(['flurries', 'light snow showers'])
+        return 'with ' + random.choice(['some', 'a few']) + ' ' + random.choice(['flurries', 'light snow showers'])
     if total_precip <= 125: 
-        return random.choice(['a little precipitation', 'some snow showers'])
+        return random.choice(['with a little precipitation', 'with some snow showers'])
     if total_precip <= 300: 
-        return random.choice(['steady snow', 'quite a bit of snow'])
+        return random.choice(['with steady snow', 'with quite a bit of snow', 'and snowy'])
     else:
-        return 'lots of snow'
+        return 'with lots of snow'
 
 
 # generalized precipitation forecast, includes if skies are clear
@@ -175,13 +175,13 @@ def get_forecast_data(last, current):
 
 def forecast_day(data, verb):
     (tempdata, precipdata) = get_forecast_data(data['yesterday'], data['today'])
-    forecast_1 = 'today ' + verb + ' ' + tempdata + ' yesterday with ' + precipdata
+    forecast_1 = 'today ' + verb + ' ' + tempdata + ' yesterday ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['last_night'], data['tonight'])
-    forecast_2 = 'tonight will be ' + tempdata + ' last night with ' + precipdata
+    forecast_2 = 'tonight will be ' + tempdata + ' last night ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['today'], data['tomorrow'])
-    forecast_3 = 'tomorrow will be ' + tempdata + ' today with ' + precipdata
+    forecast_3 = 'tomorrow will be ' + tempdata + ' today ' + precipdata
 
     return [forecast_1, forecast_2, forecast_3]
 
@@ -191,7 +191,7 @@ def forecast_night(data, verb):
     forecast_1 = 'tonight ' + verb + ' ' + tempdata + ' last night with ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['today'], data['tomorrow'])
-    forecast_2 = 'tomorrow will be ' + tempdata + ' today with ' + precipdata #TODO: yesterday?!
+    forecast_2 = 'tomorrow will be ' + tempdata + ' today with ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['tonight'], data['tomorrow_night'])
     forecast_3 = 'tomorrow night will be ' + tempdata + ' tonight with ' + precipdata
