@@ -68,23 +68,13 @@ def avg(weather_data, param):
     avg /= 12.0 #TODO: is this divided by 12? or 4? is the "precipMM" over that 3hr period? I can't find anywhere on the docs that says it is, but this is what it seems like?
     return avg
 
-
-# # TODO: min temp vs getting "tonight's" low temp?!
-# def get_temp(time):
-#     if night:
-#         #TODO: Do this intelligently. Need tomorrow's data? But definitely don't look at midnight-6am of the current day.
-#         return float(time['data']['weather'][0]['mintempF'])
-#     else:
-#         return float(time['data']['weather'][0]['maxtempF'])
-
-
 def cloud_forecast(cloud_percent):
     if cloud_percent < 25:
         return random.choice(['with clear skies'])#, 'and sunny'])
     if cloud_percent < 75:
         return random.choice(['with partly cloudy skies', 'with some clouds', 'and a little cloudy'])
     if cloud_percent < 90:
-        return random.choice(['with mostly cloudy skies', 'with many clouds', 'with cloud cover', 'and cloudy'])
+        return random.choice(['with mostly cloudy skies', 'with many clouds', 'and cloudy'])
     return random.choice(['and overcast', 'with cloudy skies'])
 
 
@@ -103,12 +93,12 @@ def rain_forecast(total_precip):
 def snow_forecast(total_precip):
     if total_precip <= 25: # inch of snow
         return 'with ' + random.choice(['some', 'a few']) + ' ' + random.choice(['flurries', 'light snow showers'])
-    if total_precip <= 125: 
+    if total_precip <= 75: 
         return random.choice(['with a little precipitation', 'with some snow showers'])
-    if total_precip <= 300: 
+    if total_precip <= 150: 
         return random.choice(['with steady snow', 'with quite a bit of snow', 'and snowy'])
     else:
-        return 'with lots of snow'
+        return random.choice(['with lots of snow'], ['with heavy snow'], ['with significant snowfall'])
 
 
 # generalized precipitation forecast, includes if skies are clear
@@ -147,7 +137,7 @@ def temp_forecast(temp_before, temp_after):
     temp_diff = temp_after - temp_before
     hot_or_cold = ''
     if temp_diff == 0:
-        return 'about the same temperature as'
+        return random.choice(['about the same temperature as'], ['a similar temperature to'])
     hot_or_cold = hot_or_cold_adj(temp_diff, (temp_before + temp_after) / 2.0)
     temp_diff = abs(temp_diff)
 
@@ -222,7 +212,7 @@ def max_temp(data):
     return float(data['data']['weather'][0]['maxtempF'])
 
 def avg_night_temp(before, after):
-    return (
+    return ( #?!?!?!?!?!?
         float(before['data']['weather'][0]['hourly'][-1]['FeelsLikeF']) + 
         float( after['data']['weather'][0]['hourly'][0]['FeelsLikeF'])
            ) / 2.0
