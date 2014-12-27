@@ -80,11 +80,11 @@ def avg(weather_data, param):
 
 def cloud_forecast(cloud_percent):
     if cloud_percent < 25:
-        return random.choice(['with clear skies', 'and sunny'])
+        return random.choice(['with clear skies'])#, 'and sunny'])
     if cloud_percent < 75:
         return random.choice(['with partly cloudy skies', 'with some clouds', 'and a little cloudy'])
     if cloud_percent < 90:
-        return random.choice(['with mostly cloudy skies', 'with many clouds', 'with cloud cover', 'and cloudly'])
+        return random.choice(['with mostly cloudy skies', 'with many clouds', 'with cloud cover', 'and cloudy'])
     return random.choice(['and overcast', 'with cloudy skies'])
 
 
@@ -188,13 +188,13 @@ def forecast_day(data, verb):
 
 def forecast_night(data, verb):
     (tempdata, precipdata) = get_forecast_data(data['last_night'], data['tonight'])
-    forecast_1 = 'tonight ' + verb + ' ' + tempdata + ' last night with ' + precipdata
+    forecast_1 = 'tonight ' + verb + ' ' + tempdata + ' last night ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['today'], data['tomorrow'])
-    forecast_2 = 'tomorrow will be ' + tempdata + ' today with ' + precipdata
+    forecast_2 = 'tomorrow will be ' + tempdata + ' today ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['tonight'], data['tomorrow_night'])
-    forecast_3 = 'tomorrow night will be ' + tempdata + ' tonight with ' + precipdata
+    forecast_3 = 'tomorrow night will be ' + tempdata + ' tonight ' + precipdata
 
     return [forecast_1, forecast_2, forecast_3]
 
