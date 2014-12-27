@@ -98,7 +98,7 @@ def snow_forecast(total_precip):
     if total_precip <= 150: 
         return random.choice(['with steady snow', 'with quite a bit of snow', 'and snowy'])
     else:
-        return random.choice(['with lots of snow'], ['with heavy snow'], ['with significant snowfall'])
+        return random.choice(['with lots of snow', 'with heavy snow', 'with significant snowfall'])
 
 
 # generalized precipitation forecast, includes if skies are clear
@@ -137,7 +137,7 @@ def temp_forecast(temp_before, temp_after):
     temp_diff = temp_after - temp_before
     hot_or_cold = ''
     if temp_diff == 0:
-        return random.choice(['about the same temperature as'], ['a similar temperature to'])
+        return random.choice(['about the same temperature as', 'a similar temperature to'])
     hot_or_cold = hot_or_cold_adj(temp_diff, (temp_before + temp_after) / 2.0)
     temp_diff = abs(temp_diff)
 
@@ -212,7 +212,7 @@ def max_temp(data):
     return float(data['data']['weather'][0]['maxtempF'])
 
 def avg_night_temp(before, after):
-    return ( #?!?!?!?!?!?
+    return (
         float(before['data']['weather'][0]['hourly'][-1]['FeelsLikeF']) + 
         float( after['data']['weather'][0]['hourly'][0]['FeelsLikeF'])
            ) / 2.0
