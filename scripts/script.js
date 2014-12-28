@@ -93,8 +93,8 @@ function get_success(data) {
 
 $('#zip_submit').click(function() {
     var zip_code = $('#zip_box').val(); 
-    if (zip_code.match(/^[0-9]{5}/) != null) {
-        $.get('/api?zip='+zip_code, get_success);
+    if (zip_code.match(/^[0-9]{5}(-[0-9]{4}|)/) != null) {
+        $.get('/api?zip='+zip_code.slice(0,5), get_success);
     } else {
         alert("That's not a valid location.");
     }

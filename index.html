@@ -11,24 +11,26 @@
 <body>
 	<div id="header">
 		<h1 id="app_title">RelaWeather</h1>
-		<h4 id ="description">Relevent & relative weather forecast</h4>
+		<h4 id="description">Relevent & relative weather forecast</h4>
 	</div>
 	<div id="forecast">
 		<h2 id="location_name"></h2>
-		<h2 class = "desc" id="weather_desc1">loading...</h2>
-		<h2 class = "desc" id="weather_desc2">loading...</h2>
-		<h2 class = "desc" id="weather_desc3">loading...</h2>
+		<h2 class="desc" id="weather_desc1">loading...</h2>
+		<h2 class="desc" id="weather_desc2">loading...</h2>
+		<h2 class="desc" id="weather_desc3">loading...</h2>
 		
 	</div>
 	<div class="desc" id="arrows">
-		<button class="submit_button" id="prev"><</button>
-    	<button class="submit_button" id="next">></button>
+		<button class="submit_button" id="prev">&lt;</button>
+    	<button class="submit_button" id="next">&gt;</button>
 	</div>
 	<div id="location_form">
 		<h2>Enter your location:</h2>
-			<input id="zip_box" type="tel" name="zip" placeholder="zip code" size=10 autofocus>&nbsp;
-            <button class="submit_button" id="zip_submit">Go</button><br>
-		or<br>
+        <input id="zip_box" type="tel" name="zip" placeholder="zip code" size=10 autofocus>&nbsp;
+        <button class="submit_button" id="zip_submit">Go</button>
+        <br>
+		or
+        <br>
 		<input class="submit_button" id="use_geolocation" type="submit" value="Use My Location">
 	</div>
 	<br><br><br>
@@ -37,5 +39,5 @@
   </footer>
 </body>
 <script src="http://code.jquery.com/jquery-latest.min.js"></script>
-<script type="text/javascript" src ="scripts/script.js"></script>
+<script type="text/javascript" src="scripts/script.js"></script>
 </html>
