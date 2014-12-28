@@ -67,6 +67,7 @@ $(document).ready(function() {
     $('#prev').click(prev);
     $('#next').click(next);
     $('#prev').hide();
+    $('#next').hide();
     $('#weather_desc2').hide();
     $('#weather_desc3').hide();
     $('#location_name').hide();
@@ -120,5 +121,7 @@ function show_weather(weather_strings, place_string){
     $('#forecast').show();
     $('#location_form').hide();
     $('#change_location').show();
+    $('#next').show();
+    $('#browser_title').html(place_string + " Forecast");
 }
 

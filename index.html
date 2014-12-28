@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>RelaWeather</title>
+<title id="browser_title">RelaWeather</title>
 <link href='http://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'>
 <link rel="stylesheet" type="text/css" href="themes/style.css">
 <link rel="icon" href="favicon.ico" type="image/x-icon">
@@ -9,30 +9,30 @@
 <meta name="mobile-web-app-capable" content="yes">
 </head>
 <body>
-	<div id="app_title">
-		<h1>RelaWeather</h1>
-		<h4>Relevent & relative weather forecast</h4>
-		<hr>
+	<div id="header">
+		<h1 id="app_title">RelaWeather</h1>
+		<h4 id ="description">Relevent & relative weather forecast</h4>
 	</div>
 	<div id="forecast">
 		<h2 id="location_name"></h2>
-		<h2 id="weather_desc1">loading...</h2>
-		<h2 id="weather_desc2">loading...</h2>
-		<h2 id="weather_desc3">loading...</h2>
+		<h2 class = "desc" id="weather_desc1">loading...</h2>
+		<h2 class = "desc" id="weather_desc2">loading...</h2>
+		<h2 class = "desc" id="weather_desc3">loading...</h2>
+		
+	</div>
+	<div class="desc" id="arrows">
+		<button class="submit_button" id="prev"><</button>
+    	<button class="submit_button" id="next">></button>
 	</div>
 	<div id="location_form">
 		<h2>Enter your location:</h2>
-			<input id="zip_box" type="tel" name="zip" placeholder="zip code" size=10 autofocus><br><br>
+			<input id="zip_box" type="tel" name="zip" placeholder="zip code" size=10 autofocus>&nbsp;
             <button class="submit_button" id="zip_submit">Go</button><br>
 		or<br>
 		<input class="submit_button" id="use_geolocation" type="submit" value="Use My Location">
 	</div>
-
-	<button class="submit_button" id="change_location" type="submit">Change Location</button><br>
-    <br>
-    <button class="submit_button" id="prev">go bak</button>
-    <button class="submit_button" id="next">go next</button>
-
+	<br><br><br>
+	<button class="submit_button" id="change_location" type="submit">Change Location</button>
 	<footer id="footer"><a  href="http://ebcmsoftware.com" target="_blank">&copy; EBCM Software 2014</a> &nbsp;|&nbsp; <a href="http://ebcmsoftware.com/donate/" target="_blank"> Donate</a>  <a id="source" href="https://github.com/charles-meyer/relaweather">&nbsp;|&nbsp; Source</a>
   </footer>
 </body>

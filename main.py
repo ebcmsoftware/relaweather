@@ -165,26 +165,26 @@ def get_forecast_data(last, current):
 
 def forecast_day(data, verb):
     (tempdata, precipdata) = get_forecast_data(data['yesterday'], data['today'])
-    forecast_1 = 'today ' + verb + ' ' + tempdata + ' yesterday ' + precipdata
+    forecast_1 = 'Today ' + verb + ' ' + tempdata + ' yesterday ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['last_night'], data['tonight'])
-    forecast_2 = 'tonight will be ' + tempdata + ' last night ' + precipdata
+    forecast_2 = 'Tonight will be ' + tempdata + ' last night ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['today'], data['tomorrow'])
-    forecast_3 = 'tomorrow will be ' + tempdata + ' today ' + precipdata
+    forecast_3 = 'Tomorrow will be ' + tempdata + ' today ' + precipdata
 
     return [forecast_1, forecast_2, forecast_3]
 
 
 def forecast_night(data, verb):
     (tempdata, precipdata) = get_forecast_data(data['last_night'], data['tonight'])
-    forecast_1 = 'tonight ' + verb + ' ' + tempdata + ' last night ' + precipdata
+    forecast_1 = 'Tonight ' + verb + ' ' + tempdata + ' last night ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['today'], data['tomorrow'])
-    forecast_2 = 'tomorrow will be ' + tempdata + ' today ' + precipdata
+    forecast_2 = 'Tomorrow will be ' + tempdata + ' today ' + precipdata
 
     (tempdata, precipdata) = get_forecast_data(data['tonight'], data['tomorrow_night'])
-    forecast_3 = 'tomorrow night will be ' + tempdata + ' tonight ' + precipdata
+    forecast_3 = 'Tomorrow night will be ' + tempdata + ' tonight ' + precipdata
 
     return [forecast_1, forecast_2, forecast_3]
 

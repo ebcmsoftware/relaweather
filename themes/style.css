@@ -7,10 +7,11 @@ body{
 	-moz-user-select: none; /* Firefox */
 	-ms-user-select: none; /* IE10+ */
 	font-size: 87.5%;
+	margin: 0 0 auto 0;
 }
 
 h1 {
-	font-size: 3em;
+	font-size: 2.5em;
 	 
 }
 
@@ -24,6 +25,7 @@ h4 {
 
 a {
 	text-decoration: none;
+	color: black;
 }
 
 hr {
@@ -31,39 +33,70 @@ hr {
 }
 
 a:visited {
-	color: white;
+	color: black;
+}
+
+#description {
+	margin-top: 0;
+}
+
+#header {
+	color: black;
+	margin: 0px;
+	margin-bottom: 10px;
+	width: 100%;
+	background-color: #ecf0f1;
 }
 
 #app_title {
-	margin-bottom: 10px;
-}
-
-#app_title h1{
-	margin: 0px;
+	margin-bottom: 0px;
 }
 
 #location_form {
+	clear: both;
+}
 
+#prev{
+	float: left;
+}
+
+#next{
+	float: right;
+}
+
+.desc {
+	width: 25%;
+	margin: 0 auto;
 }
 
 #forecast {
 	margin-bottom: 50px;
+	width: 100%;
+}
+
+#change_location{
+	clear: both;
 }
 
 .submit_button {
     border-radius: 0px;
-    border: 0;
+    border: 3px solid #2980b9;
+    font-size: 1em;
     font-family: 'Montserrat';
     background: white;
-    padding: 5px 20px;
+    padding: 10px 20px;
 }	
 
 #zip_box {
 	font-family: 'Montserrat';
     font-size: 1em;
+    border: 3px solid #2980b9;
+    padding: 10px;
+    margin: 0 20px 20px 0;
 }
 
 #footer{
+  	color: black;
 	text-align: center;
 	width: 100%;
 	font-size : 1em;
@@ -72,4 +105,5 @@ a:visited {
   	position:fixed;
   	bottom:0px;
   	border-top: 2px solid #EEF2F3;
+  	background-color: #ecf0f1;
 }
