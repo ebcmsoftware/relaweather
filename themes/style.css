@@ -1,4 +1,4 @@
-body{
+body {
 	background-color: #34495e;
 	color: white;
 	font-family: 'Montserrat';
@@ -10,9 +10,12 @@ body{
 	margin: 0 0 auto 0;
 }
 
+.wrapper {
+	padding-bottom: 1em + 10px;
+}
+
 h1 {
 	font-size: 2.5em;
-	 
 }
 
 h2 {

@@ -1,40 +1,45 @@
 <html>
 <head>
-<title id="browser_title">RelaWeather</title>
-<link href='http://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'>
-<link rel="stylesheet" type="text/css" href="themes/style.css">
-<link rel="icon" href="favicon.ico" type="image/x-icon">
-<link rel="stylesheet" media="screen and (max-device-width: 799px) and (orientation : portrait)" href="themes/phonestyle.css"/>
-<meta name="viewport" content="width=device-width, user-scalable=no">
-<meta name="mobile-web-app-capable" content="yes">
+  <title id="browser_title">RelaWeather</title>
+  <link href='http://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" type="text/css" href="themes/style.css">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" media="screen and (max-device-width: 799px) and (orientation : portrait)" href="themes/phonestyle.css"/>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=0, width=device-width, height=device-height"/>
+  <meta name="mobile-web-app-capable" content="yes">
 </head>
+
 <body>
-	<div id="header">
-		<h1 id="app_title">RelaWeather</h1>
-		<h4 id ="description">Relevent & relative weather forecast</h4>
-	</div>
-	<div id="forecast">
-		<h2 id="location_name"></h2>
-		<h2 class = "desc" id="weather_desc1">loading...</h2>
-		<h2 class = "desc" id="weather_desc2">loading...</h2>
-		<h2 class = "desc" id="weather_desc3">loading...</h2>
-		
-	</div>
-	<div class="desc" id="arrows">
-		<button class="submit_button" id="prev"><</button>
-    	<button class="submit_button" id="next">></button>
-	</div>
-	<div id="location_form">
-		<h2>Enter your location:</h2>
-			<input id="zip_box" type="tel" name="zip" placeholder="zip code" size=10 autofocus>&nbsp;
-            <button class="submit_button" id="zip_submit">Go</button><br>
-		or<br>
-		<input class="submit_button" id="use_geolocation" type="submit" value="Use My Location">
-	</div>
-	<br><br><br>
-	<button class="submit_button" id="change_location" type="submit">Change Location</button>
-	<footer id="footer"><a  href="http://ebcmsoftware.com" target="_blank">&copy; EBCM Software 2014</a> &nbsp;|&nbsp; <a href="http://ebcmsoftware.com/donate/" target="_blank"> Donate</a>  <a id="source" href="https://github.com/charles-meyer/relaweather">&nbsp;|&nbsp; Source</a>
-  </footer>
+  <div class="wrapper">
+  <div id="header">
+    <h2 id="app_title">RelaWeather</h2>
+    <h4 id ="description">Relevent & relative weather forecast</h4>
+  </div>
+  <div id="forecast">
+    <h2 id="location_name"></h2>
+    <h2 class = "desc" id="weather_desc1">loading...</h2>
+    <h2 class = "desc" id="weather_desc2">loading...</h2>
+    <h2 class = "desc" id="weather_desc3">loading...</h2>
+  </div>
+  <div class="desc" id="arrows">
+    <button class="submit_button" id="prev"><</button>
+    <button class="submit_button" id="next">></button>
+  </div>
+  <div id="location_form">
+    <h2>Enter your location:</h2>
+    <input id="zip_box" type="tel" name="zip" placeholder="zip code" size=10 autofocus>&nbsp;
+    <button class="submit_button" id="zip_submit">Go</button><br>
+    or<br>
+    <input class="submit_button" id="use_geolocation" type="submit" value="Use My Location">
+  </div>
+  <br><br><br>
+  <button class="submit_button" id="change_location" type="submit">Change Location</button>
+  </div>
+  <div id="footer">
+    <a  href="http://ebcmsoftware.com" target="_blank">&copy; EBCM Software 2014</a>&nbsp;|&nbsp; 
+    <a href="http://ebcmsoftware.com/donate/" target="_blank"> Donate</a>
+    <a id="source" href="https://github.com/charles-meyer/relaweather">&nbsp;|&nbsp; Source</a>
+  </div>
 </body>
 <script src="http://code.jquery.com/jquery-latest.min.js"></script>
 <script type="text/javascript" src ="scripts/script.js"></script>
